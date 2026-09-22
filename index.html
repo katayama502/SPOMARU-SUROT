@@ -139,7 +139,6 @@
     font-size:clamp(26px, 6vw, 34px);
     font-weight:900;
     text-align:center;
-    text-transform:uppercase;
     caret-color:var(--cyan);
     font-family:inherit;
     outline:none;
@@ -173,6 +172,21 @@
     40%{ box-shadow:6px 6px 0 var(--ok), 0 0 40px rgba(57,255,136,.6); }
     100%{ box-shadow:6px 6px 0 var(--yellow); }
   }
+
+  .kana-toggle-row{ display:flex; justify-content:center; margin-top:6px; }
+  .kana-toggle{
+    font-family:inherit;
+    font-size:13px; font-weight:800;
+    background:var(--input-bg);
+    color:var(--cyan);
+    border:2px solid var(--cyan);
+    border-radius:999px;
+    padding:7px 18px;
+    cursor:pointer;
+    box-shadow:0 0 10px rgba(0,240,255,.25);
+    transition:transform .08s;
+  }
+  .kana-toggle:active{ transform:scale(.95); }
 
   /* on-screen keypad */
   .keypad{
@@ -535,10 +549,14 @@
         <div class="speech-bubble">7けたの<br>あいことばは？</div>
       </div>
       <p class="kawaii-title">🔑 さいごのおたから解錠</p>
-      <p class="kawaii-sub">7桁のパスコードを入力してね♪</p>
+      <p class="kawaii-sub">7文字のひらがな・カタカナを入力してね♪</p>
 
       <div class="code-plate">
         <div class="code-row" id="codeRow"></div>
+      </div>
+
+      <div class="kana-toggle-row">
+        <button type="button" class="kana-toggle" id="kanaToggleBtn">カタカナに切替</button>
       </div>
 
       <div class="keypad" id="keypad"></div>
@@ -622,8 +640,8 @@
     <button class="modal-close" id="adminClose">×</button>
     <h2>裏側設定パネル</h2>
 
-    <label>正解コード（7桁・英数字）</label>
-    <input type="text" id="answerInput" maxlength="7">
+    <label>正解コード（ひらがな7文字）</label>
+    <input type="text" id="answerInput" maxlength="7" placeholder="例：あさひのたから">
 
     <label>景品リスト（画像・当選確率は自由に設定できます／3つ揃うと当たり）</label>
     <div id="prizeList"></div>
@@ -664,7 +682,7 @@
   var LOSE_COMPANION_IMAGE = "mascot-cocoa.png";
 
   var DEFAULT_CONFIG = {
-    answer: "ABC1234",
+    answer: "あさひのたから",
     pin: "1234",
     prizes: [
       { name:"当たり",     weight:30, color:"#ffdb00", image:"mascot-diamond-point.png" },
@@ -675,6 +693,17 @@
   function isLoseName(name){
     return /はずれ|残念|外れ/.test(name||"");
   }
+
+  /* 50-on (gojuon) kana table, in traditional reading order.
+     Index-aligned so HIRAGANA_LIST[i] <-> KATAKANA_LIST[i]. */
+  var HIRAGANA_LIST = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち","つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め","も","や","ゆ","よ","ら","り","る","れ","ろ","わ","を","ん"];
+  var KATAKANA_LIST = ["ア","イ","ウ","エ","オ","カ","キ","ク","ケ","コ","サ","シ","ス","セ","ソ","タ","チ","ツ","テ","ト","ナ","ニ","ヌ","ネ","ノ","ハ","ヒ","フ","ヘ","ホ","マ","ミ","ム","メ","モ","ヤ","ユ","ヨ","ラ","リ","ル","レ","ロ","ワ","ヲ","ン"];
+  var KATA_TO_HIRA = {};
+  KATAKANA_LIST.forEach(function(k, i){ KATA_TO_HIRA[k] = HIRAGANA_LIST[i]; });
+  function toHiragana(str){
+    return (str||"").split("").map(function(ch){ return KATA_TO_HIRA[ch] || ch; }).join("");
+  }
+  var KANA_CHAR_RE = /^[ぁ-ゖァ-ヺー]$/;
 
   function loadConfig(){
     try{
@@ -768,7 +797,7 @@
     cells[idx].classList.toggle("filled", !!ch);
   }
   function currentCode(){
-    return cells.map(function(c){ return (c.value||"").toUpperCase(); }).join("");
+    return toHiragana(cells.map(function(c){ return c.value||""; }).join(""));
   }
   function focusFirstEmpty(){
     for(var i=0;i<CODE_LEN;i++){
@@ -779,8 +808,9 @@
 
   cells.forEach(function(cell, idx){
     cell.addEventListener("input", function(){
-      var v = cell.value.toUpperCase().replace(/[^A-Z0-9]/g,"");
-      cell.value = v.slice(-1);
+      var last = cell.value.slice(-1);
+      var v = KANA_CHAR_RE.test(last) ? last : "";
+      cell.value = v;
       cell.classList.toggle("filled", !!cell.value);
       if(cell.value && idx < CODE_LEN-1){ cells[idx+1].focus(); }
       clearResult();
@@ -794,25 +824,35 @@
     cell.addEventListener("focus", function(){ cell.select(); });
   });
 
-  /* on-screen keypad for touch/kiosk use */
+  /* on-screen 50-on keypad for touch/kiosk use, switchable hiragana/katakana */
   var keypad = document.getElementById("keypad");
-  var KEYS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-  KEYS.forEach(function(k){
+  var kanaToggleBtn = document.getElementById("kanaToggleBtn");
+  var kanaMode = "hiragana"; // or "katakana"
+  var kanaButtons = [];
+
+  function currentKanaList(){
+    return kanaMode === "hiragana" ? HIRAGANA_LIST : KATAKANA_LIST;
+  }
+
+  HIRAGANA_LIST.forEach(function(_, i){
     var b = document.createElement("button");
-    b.textContent = k;
     b.type = "button";
+    b.textContent = currentKanaList()[i];
     b.addEventListener("click", function(){
-      for(var i=0;i<CODE_LEN;i++){
-        if(!cells[i].value){
-          setCell(i,k);
-          if(i<CODE_LEN-1) cells[i+1].focus();
+      var ch = currentKanaList()[i];
+      for(var j=0;j<CODE_LEN;j++){
+        if(!cells[j].value){
+          setCell(j, ch);
+          if(j<CODE_LEN-1) cells[j+1].focus();
           clearResult();
           return;
         }
       }
     });
     keypad.appendChild(b);
+    kanaButtons.push(b);
   });
+
   var clearBtn = document.createElement("button");
   clearBtn.textContent = "⌫ 消去";
   clearBtn.type = "button";
@@ -824,6 +864,25 @@
     clearResult();
   });
   keypad.appendChild(clearBtn);
+
+  kanaToggleBtn.addEventListener("click", function(){
+    // convert whatever is already typed into the newly selected script too,
+    // so the board stays visually consistent after switching.
+    var toKatakana = kanaMode === "hiragana";
+    cells.forEach(function(cell){
+      if(!cell.value) return;
+      if(toKatakana){
+        var idx = HIRAGANA_LIST.indexOf(cell.value);
+        if(idx !== -1) cell.value = KATAKANA_LIST[idx];
+      } else {
+        cell.value = toHiragana(cell.value);
+      }
+    });
+    kanaMode = toKatakana ? "katakana" : "hiragana";
+    kanaToggleBtn.textContent = toKatakana ? "ひらがなに切替" : "カタカナに切替";
+    var list = currentKanaList();
+    kanaButtons.forEach(function(btn, i){ btn.textContent = list[i]; });
+  });
 
   var vaultPanel = document.getElementById("vaultPanel");
   var resultMsg = document.getElementById("resultMsg");
@@ -848,7 +907,7 @@
     submitBtn.disabled = true;
     vaultPanel.classList.remove("right","wrong");
 
-    var isCorrect = (code === (config.answer||"").toUpperCase());
+    var isCorrect = (code === toHiragana(config.answer||""));
 
     if(isCorrect){
       sfxCorrect();
@@ -1269,9 +1328,9 @@
   adminClose.addEventListener("click", function(){ adminBackdrop.classList.remove("active"); });
 
   saveConfigBtn.addEventListener("click", function(){
-    var ans = (answerInput.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+    var ans = toHiragana((answerInput.value||"").replace(/[^ぁ-ゖァ-ヺー]/g,""));
     if(ans.length !== CODE_LEN){
-      alert("正解コードは英数字" + CODE_LEN + "桁で入力してください。");
+      alert("正解コードはひらがな（またはカタカナ）" + CODE_LEN + "文字で入力してください。");
       return;
     }
     config.answer = ans;
