@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>なぞとき最終チャレンジ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0c0826;
+    --card-bg:#16113a;
+    --input-bg:#0e0a24;
+    --border-dark:#333333;
+    --cyan:#00f0ff;
+    --pink:#ff2e93;
+    --yellow:#ffdb00;
+    --purple:#b026ff;
+    --text-light:#f0edff;
+    --text-dim:#b8b0e0;
+    --ok:#39ff88;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; width:100%; min-height:100%;
+    color:var(--text-light);
+    overflow-x:hidden;
+  }
+  body{
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+    background:var(--bg-deep);
+    min-height:100vh;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      radial-gradient(rgba(255,46,147,.15) 15%, transparent 15%),
+      radial-gradient(rgba(0,240,255,.15) 15%, transparent 15%);
+    background-size:40px 40px, 40px 40px;
+    background-position:0 0, 20px 20px;
+    pointer-events:none;
+  }
+  #app{
+    position:relative; z-index:1;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px 14px;
+  }
+  .screen{
+    display:none;
+    width:100%;
+    max-width:520px;
+  }
+  .screen.active{ display:block; animation:fadeIn .5s ease; }
+  #screen-roulette.screen{ max-width:min(96vw, 980px); }
+  #screen-board.screen{ max-width:min(94vw, 640px); }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  .kawaii-title{
+    text-align:center;
+    font-size:clamp(1.5rem, 5.5vw, 2rem);
+    font-weight:900;
+    letter-spacing:.04em;
+    margin:2px 0 2px;
+    color:var(--yellow);
+    text-shadow:0 0 14px rgba(255,219,0,.45), 2px 2px 0 rgba(0,0,0,.35);
+  }
+  .kawaii-sub{
+    text-align:center;
+    font-size:.95rem;
+    color:var(--text-dim);
+    letter-spacing:.05em;
+    margin:0 0 18px;
+  }
+
+  /* ---------- Answer board ---------- */
+  .kawaii-card{
+    position:relative;
+    background:var(--card-bg);
+    border:4px solid var(--yellow);
+    border-radius:30px;
+    padding:34px 30px 38px;
+    box-shadow:8px 8px 0 var(--yellow);
+  }
+  .deco-row{ text-align:center; color:var(--purple); font-size:17px; letter-spacing:13px; margin-bottom:4px; opacity:.9; }
+
+  .mascot-header{
+    display:flex; align-items:center; justify-content:center; gap:14px;
+    margin-bottom:10px;
+  }
+  .mascot-avatar{
+    width:78px; height:78px; border-radius:50%;
+    object-fit:cover; object-position:top center;
+    border:4px solid var(--cyan);
+    box-shadow:0 0 18px rgba(0,240,255,.5);
+    animation:mascotBob 3s ease-in-out infinite;
+  }
+  @keyframes mascotBob{ 0%,100%{ transform:translateY(0) rotate(-3deg); } 50%{ transform:translateY(-4px) rotate(3deg); } }
+  .speech-bubble{
+    position:relative;
+    background:var(--input-bg);
+    border:2px solid var(--cyan);
+    border-radius:16px;
+    padding:12px 16px;
+    font-size:.9rem;
+    font-weight:700;
+    color:var(--text-light);
+    line-height:1.4;
+    box-shadow:0 0 10px rgba(0,240,255,.25);
+  }
+  .speech-bubble::before{
+    content:"";
+    position:absolute; left:-8px; top:50%; transform:translateY(-50%);
+    border:7px solid transparent; border-right-color:var(--input-bg);
+  }
+
+  .code-plate{
+    background:var(--input-bg);
+    border:2px solid var(--border-dark);
+    border-radius:18px;
+    padding:20px 16px;
+    box-shadow:inset 0 2px 8px rgba(0,0,0,.5);
+    margin-bottom:18px;
+  }
+  .code-row{
+    display:flex; justify-content:center; gap:8px; flex-wrap:wrap;
+  }
+  .code-cell{
+    width:clamp(44px, 9vw, 60px); height:clamp(56px, 11vw, 78px);
+    background:var(--input-bg);
+    border:3px solid var(--border-dark);
+    border-radius:14px;
+    box-shadow:inset 2px 2px 5px rgba(0,0,0,.5);
+    color:#fff;
+    font-size:clamp(26px, 6vw, 34px);
+    font-weight:900;
+    text-align:center;
+    text-transform:uppercase;
+    caret-color:var(--cyan);
+    font-family:inherit;
+    outline:none;
+    transition:box-shadow .15s, border-color .15s, transform .15s;
+  }
+  .code-cell:focus{
+    border-color:var(--cyan);
+    box-shadow:inset 2px 2px 5px rgba(0,0,0,.5), 0 0 0 3px rgba(0,240,255,.35);
+  }
+  .code-cell.filled{
+    border-color:var(--yellow);
+    box-shadow:inset 2px 2px 5px rgba(0,0,0,.5), 0 0 10px rgba(255,219,0,.4);
+  }
+
+  .kawaii-card.wrong .code-cell{
+    border-color:var(--pink);
+    color:var(--pink);
+  }
+  .kawaii-card.wrong{ animation:cuteShake .45s; }
+  @keyframes cuteShake{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-7px) rotate(-1deg); }
+    40%{ transform:translateX(6px) rotate(1deg); }
+    60%{ transform:translateX(-4px); }
+    80%{ transform:translateX(3px); }
+  }
+
+  .kawaii-card.right{ animation:cutePulse 1.1s; }
+  @keyframes cutePulse{
+    0%{ box-shadow:6px 6px 0 var(--yellow); }
+    40%{ box-shadow:6px 6px 0 var(--ok), 0 0 40px rgba(57,255,136,.6); }
+    100%{ box-shadow:6px 6px 0 var(--yellow); }
+  }
+
+  /* on-screen keypad */
+  .keypad{
+    display:grid;
+    grid-template-columns:repeat(9, 1fr);
+    gap:7px;
+    margin:18px 0 8px;
+  }
+  .keypad button{
+    padding:14px 0;
+    font-size:15px;
+    font-weight:800;
+    background:var(--input-bg);
+    color:var(--text-light);
+    border:2px solid var(--border-dark);
+    border-radius:11px;
+    cursor:pointer;
+    font-family:inherit;
+    box-shadow:3px 3px 0 var(--border-dark);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .keypad button:active{ transform:translate(3px,3px); box-shadow:none; }
+  .keypad button.wide{
+    grid-column:span 3;
+    background:var(--pink);
+    color:#fff;
+    border-color:var(--border-dark);
+    box-shadow:3px 3px 0 var(--border-dark);
+  }
+
+  .lock-row{ display:flex; justify-content:center; margin-top:20px; }
+  .lock-icon{ font-size:22px; margin-right:8px; vertical-align:middle; }
+
+  .main-btn{
+    position:relative;
+    overflow:hidden;
+    font-family:inherit;
+    font-size:clamp(1.05rem, 4vw, 1.3rem);
+    font-weight:900; letter-spacing:.05em;
+    color:var(--bg-deep);
+    background:var(--yellow);
+    border:3px solid var(--border-dark); border-radius:12px;
+    padding:17px 48px;
+    cursor:pointer;
+    box-shadow:4px 4px 0 var(--border-dark);
+    transition:transform .08s, box-shadow .08s, filter .2s;
+  }
+  .btn-shine{ display:none; }
+  .main-btn:active{ transform:translate(4px,4px); box-shadow:0 0 0 var(--border-dark); }
+  .main-btn:disabled{ opacity:.55; cursor:default; }
+  .main-btn.pink{
+    background:var(--pink);
+    color:#fff;
+    border-color:var(--border-dark);
+    box-shadow:4px 4px 0 var(--border-dark);
+  }
+
+  .result-msg{
+    text-align:center;
+    font-size:18px;
+    letter-spacing:2px;
+    margin-top:12px;
+    min-height:24px;
+    font-weight:900;
+  }
+  .result-msg.ok{ color:var(--ok); text-shadow:0 0 10px rgba(57,255,136,.5); }
+  .result-msg.bad{ color:var(--pink); text-shadow:0 0 10px rgba(255,46,147,.5); }
+
+  .status-lights{ display:flex; justify-content:center; gap:7px; margin-top:8px; }
+  .status-lights span{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--border-dark);
+  }
+  .status-lights.ok span{ background:var(--ok); box-shadow:0 0 6px var(--ok); }
+  .status-lights.bad span{ background:var(--pink); box-shadow:0 0 6px var(--pink); }
+
+  /* ---------- Slot screen ---------- */
+  .roulette-wrap{ text-align:center; }
+
+  .lamp-row{ display:flex; justify-content:center; gap:10px; margin-bottom:8px; }
+  .lamp{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--yellow);
+    box-shadow:0 0 6px rgba(255,219,0,.7);
+    animation:lampTwinkle 1.6s ease-in-out infinite;
+  }
+  .lamp:nth-child(3n+2){ background:var(--cyan); box-shadow:0 0 6px rgba(0,240,255,.7); animation-delay:.2s; }
+  .lamp:nth-child(3n+3){ background:var(--pink); box-shadow:0 0 6px rgba(255,46,147,.7); animation-delay:.4s; }
+  @keyframes lampTwinkle{ 0%,100%{ opacity:.35; } 50%{ opacity:1; } }
+
+  .machine{
+    position:relative;
+    width:100%;
+    margin:0 auto 20px;
+    background:var(--card-bg);
+    border:4px solid var(--yellow);
+    border-radius:36px;
+    padding:34px 30px 38px;
+    box-shadow:8px 8px 0 var(--yellow);
+  }
+  .machine::before, .machine::after{
+    content:"";
+    position:absolute; top:40px; bottom:40px; width:18px;
+    background:linear-gradient(180deg,var(--cyan),var(--purple));
+    border-radius:10px;
+    box-shadow:0 0 14px rgba(0,240,255,.4);
+  }
+  .machine::before{ left:-22px; }
+  .machine::after{ right:-22px; }
+
+  .reels-frame{
+    position:relative;
+    display:flex; justify-content:center; gap:22px;
+  }
+  .reel-window{
+    position:relative;
+    width:clamp(96px, 24vw, 220px);
+    height:calc(clamp(96px, 24vw, 220px) * 3);
+    overflow:hidden;
+    background:var(--input-bg);
+    border:4px solid var(--border-dark);
+    border-radius:22px;
+    box-shadow:inset 0 0 20px rgba(0,0,0,.6);
+  }
+  .reel-strip{ position:absolute; top:0; left:0; width:100%; }
+  .reel-cell{
+    height:clamp(96px, 24vw, 220px);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .reel-cell img{
+    width:86%; height:86%;
+    object-fit:cover; object-position:top center;
+    border-radius:16px;
+    box-shadow:0 0 14px rgba(0,240,255,.25);
+    background:#fff;
+  }
+  .shade{ position:absolute; left:0; right:0; height:34%; pointer-events:none; z-index:2; }
+  .shade.top{ top:0; background:linear-gradient(180deg, rgba(12,8,38,.85), transparent); }
+  .shade.bottom{ bottom:0; background:linear-gradient(0deg, rgba(12,8,38,.85), transparent); }
+
+  .payline{
+    position:absolute; left:-6px; right:-6px;
+    top:50%; height:clamp(96px, 24vw, 220px);
+    transform:translateY(-50%);
+    border-top:4px solid var(--pink);
+    border-bottom:4px solid var(--pink);
+    box-shadow:inset 0 0 20px rgba(255,46,147,.15), 0 0 20px rgba(255,46,147,.3);
+    pointer-events:none; z-index:3;
+  }
+
+  .machine.spinning{ animation:ambientGlow 1s ease-in-out infinite alternate; }
+  @keyframes ambientGlow{
+    from{ box-shadow:8px 8px 0 var(--yellow); }
+    to{ box-shadow:8px 8px 0 var(--yellow), 0 0 46px rgba(0,240,255,.45); }
+  }
+  .machine.shake{ animation:machineShake .4s; }
+  @keyframes machineShake{
+    0%,100%{ transform:translate(0,0); }
+    20%{ transform:translate(-6px,3px); }
+    40%{ transform:translate(5px,-3px); }
+    60%{ transform:translate(-4px,2px); }
+    80%{ transform:translate(3px,-2px); }
+  }
+  .machine.bigshake{ animation:machineBigShake .6s; }
+  @keyframes machineBigShake{
+    0%,100%{ transform:translate(0,0) rotate(0); }
+    15%{ transform:translate(-10px,5px) rotate(-1deg); }
+    30%{ transform:translate(9px,-6px) rotate(1deg); }
+    45%{ transform:translate(-7px,4px) rotate(-.6deg); }
+    60%{ transform:translate(6px,-3px) rotate(.6deg); }
+    80%{ transform:translate(-4px,2px) rotate(0); }
+  }
+
+  .reel-window.landed{ animation:reelLand .4s; }
+  @keyframes reelLand{
+    0%{ transform:translateY(0); }
+    30%{ transform:translateY(8px); }
+    60%{ transform:translateY(-5px); }
+    100%{ transform:translateY(0); }
+  }
+  .reel-window.reach{ border-color:var(--pink); animation:reachGlow .5s infinite alternate; }
+  @keyframes reachGlow{
+    from{ box-shadow:inset 0 0 20px rgba(0,0,0,.6), 0 0 10px rgba(255,46,147,.4); }
+    to{ box-shadow:inset 0 0 20px rgba(0,0,0,.6), 0 0 34px rgba(255,46,147,.95); }
+  }
+  .flash-overlay{
+    position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:5; border-radius:inherit;
+  }
+  .flash-overlay.go{ animation:flashOut .4s ease-out; }
+  @keyframes flashOut{ 0%{ opacity:.85; } 100%{ opacity:0; } }
+
+  .reach-badge{
+    position:absolute; left:50%; top:-16px; transform:translateX(-50%);
+    background:var(--pink); color:#fff; font-weight:900;
+    padding:5px 16px; border-radius:999px; border:2px solid var(--border-dark);
+    box-shadow:3px 3px 0 var(--border-dark);
+    font-size:14px; letter-spacing:3px;
+    opacity:0; pointer-events:none; z-index:6; white-space:nowrap;
+  }
+  .reach-badge.show{ opacity:1; animation:reachBounce .6s ease-in-out infinite; }
+  @keyframes reachBounce{
+    0%,100%{ transform:translateX(-50%) translateY(0); }
+    50%{ transform:translateX(-50%) translateY(-8px); }
+  }
+
+  #screenFlash{
+    position:fixed; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:300;
+  }
+  #screenFlash.go{ animation:screenFlashAnim .5s ease-out; }
+  @keyframes screenFlashAnim{ 0%{ opacity:.6; } 100%{ opacity:0; } }
+
+  .machine.winglow{ animation:winGlowPulse .35s ease-in-out 4; }
+  @keyframes winGlowPulse{
+    0%,100%{ box-shadow:8px 8px 0 var(--yellow); border-color:var(--yellow); }
+    50%{ box-shadow:8px 8px 0 var(--pink), 0 0 60px rgba(255,219,0,.7); border-color:var(--cyan); }
+  }
+
+  .cutin{ position:fixed; inset:0; pointer-events:none; z-index:320; display:none; overflow:hidden; }
+  .cutin.go{ display:block; }
+  .cutin-band{
+    position:absolute; left:-10%; right:-10%; top:50%;
+    height:clamp(90px, 18vw, 150px);
+    transform:translateY(-50%) rotate(-6deg);
+    background:linear-gradient(90deg, transparent, var(--pink) 12%, var(--yellow) 50%, var(--pink) 88%, transparent);
+    box-shadow:0 0 50px rgba(255,46,147,.6);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cutin.go .cutin-band{ animation:bandin 1.15s cubic-bezier(.25,1,.4,1) forwards; }
+  @keyframes bandin{
+    0%{ transform:translateY(-50%) rotate(-6deg) translateX(-110%); }
+    22%{ transform:translateY(-50%) rotate(-6deg) translateX(0); }
+    74%{ transform:translateY(-50%) rotate(-6deg) translateX(2%); }
+    100%{ transform:translateY(-50%) rotate(-6deg) translateX(115%); }
+  }
+  .cutin-text{
+    font-size:clamp(2rem, 9vw, 4.2rem); font-weight:900; letter-spacing:.12em;
+    color:#fff; -webkit-text-stroke:2px rgba(20,10,40,.55);
+    text-shadow:0 0 20px rgba(255,255,255,.85), 0 5px 0 rgba(20,10,40,.3);
+    white-space:nowrap;
+  }
+  .cutin.go .cutin-text{ animation:cutinText 1.15s ease-out forwards; }
+  @keyframes cutinText{
+    0%{ transform:scale(2.4); opacity:0; }
+    22%{ transform:scale(1); opacity:1; }
+    74%{ transform:scale(1.06); opacity:1; }
+    100%{ transform:scale(1.1); opacity:0; }
+  }
+
+  .spin-result-wrap{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    min-height:48px;
+    margin:6px 0 10px;
+  }
+  .result-companion{
+    width:56px; height:56px; border-radius:50%;
+    object-fit:cover; object-position:top center;
+    border:3px solid var(--cyan);
+    box-shadow:0 0 14px rgba(0,240,255,.4);
+    display:none;
+  }
+  .result-companion.show{ display:block; animation:mascotBob 1.6s ease-in-out infinite; }
+
+  .spin-result{
+    font-size:clamp(17px, 3vw, 22px);
+    letter-spacing:1px;
+    font-weight:900;
+    color:var(--yellow);
+  }
+  .spin-result.win{ color:var(--ok); text-shadow:0 0 10px rgba(57,255,136,.6); animation:winPop .6s; }
+  .spin-result.lose{ color:var(--pink); }
+  @keyframes winPop{
+    0%{ transform:scale(0.6); opacity:0; }
+    60%{ transform:scale(1.15); opacity:1; }
+    100%{ transform:scale(1); }
+  }
+
+  #screen-roulette .kawaii-title{ font-size:clamp(1.6rem, 5vw, 2.3rem); }
+  #screen-roulette .kawaii-sub{ font-size:1rem; margin-bottom:20px; }
+  #screen-roulette .main-btn{ padding:18px 56px; font-size:clamp(1.15rem, 4vw, 1.5rem); }
+  #screen-roulette .lamp{ width:12px; height:12px; }
+  #screen-roulette .lamp-row{ gap:14px; margin-bottom:14px; }
+
+  .confetti{
+    position:fixed; top:-20px; z-index:50;
+    width:8px; height:14px;
+    opacity:0.95;
+    animation:confettiFall linear forwards;
+  }
+  @keyframes confettiFall{ to{ transform:translateY(110vh) rotate(600deg); opacity:0.2; } }
+
+  /* ---------- Admin (hidden) ---------- */
+  .admin-trigger{
+    position:fixed; bottom:10px; right:10px;
+    width:30px; height:30px;
+    border-radius:50%;
+    background:var(--card-bg);
+    border:1px solid var(--cyan);
+    color:var(--cyan);
+    font-size:14px;
+    cursor:pointer;
+    box-shadow:0 0 10px rgba(0,240,255,.3);
+    z-index:100;
+  }
+  .modal-backdrop{
+    display:none;
+    position:fixed; inset:0; background:rgba(5,3,20,.75);
+    z-index:200; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal-backdrop.active{ display:flex; }
+  .modal-box{
+    background:var(--card-bg); border:3px solid var(--yellow);
+    border-radius:22px; padding:20px; width:100%; max-width:560px;
+    max-height:88vh; overflow-y:auto;
+    color:var(--text-light); font-family:inherit;
+    box-shadow:6px 6px 0 var(--yellow);
+  }
+  .modal-box h2{ margin:0 0 12px; color:var(--yellow); font-size:16px; letter-spacing:1px; }
+  .modal-box label{ display:block; font-size:12px; color:var(--text-dim); margin:10px 0 4px; font-weight:700; }
+  .modal-box input[type=text], .modal-box input[type=password], .modal-box input[type=number], .modal-box select{
+    width:100%; padding:8px; border-radius:10px; border:2px solid var(--border-dark);
+    background:var(--input-bg); color:var(--text-light); font-family:inherit; font-size:13px;
+  }
+  .prize-row{
+    display:flex; gap:5px; align-items:center; margin-bottom:8px; flex-wrap:wrap;
+    background:var(--input-bg); border:1px solid var(--border-dark); border-radius:12px; padding:6px;
+  }
+  .prize-row input[type=text]{ flex:1 1 80px; min-width:70px; }
+  .prize-row select{ flex:1 1 110px; min-width:100px; }
+  .prize-row .thumb-preview{
+    width:28px; height:28px; border-radius:6px; object-fit:cover; object-position:top center;
+    border:1px solid var(--border-dark); background:var(--bg-deep);
+  }
+  .prize-row input[type=number]{ flex:0 0 56px; width:56px; }
+  .prize-row input[type=color]{ width:28px; height:28px; padding:0; border:none; background:none; flex:0 0 28px; }
+  .prize-row .pct{ width:46px; font-size:11px; color:var(--ok); text-align:right; flex:0 0 46px; }
+  .prize-row button{
+    background:var(--pink); color:#fff; border:none; border-radius:6px; width:24px; height:24px; cursor:pointer; flex:0 0 24px;
+  }
+  .modal-actions{ display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
+  .modal-actions button, .add-prize-btn{
+    font-family:inherit; padding:8px 14px; border-radius:999px; cursor:pointer; border:2px solid var(--border-dark);
+    background:var(--input-bg); color:var(--text-light); font-size:12px; font-weight:700;
+  }
+  .modal-actions .primary{ background:var(--yellow); color:var(--bg-deep); border-color:var(--border-dark); font-weight:900; }
+  .modal-close{ float:right; background:none; border:none; color:var(--text-dim); font-size:18px; cursor:pointer; }
+  .total-note{ font-size:11px; color:var(--text-dim); margin-top:4px; }
+  .test-line{ font-size:11px; color:var(--text-dim); }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ SCREEN 1: ANSWER BOARD ============ -->
+  <div id="screen-board" class="screen active">
+    <div class="kawaii-card" id="vaultPanel">
+      <div class="deco-row">✦ ✧ ✦ ✧ ✦</div>
+      <div class="mascot-header">
+        <img src="img/thumb/mascot-wave.png" class="mascot-avatar" alt="ナゾトキ・マスコット">
+        <div class="speech-bubble">7けたの<br>あいことばは？</div>
+      </div>
+      <p class="kawaii-title">🔑 さいごのおたから解錠</p>
+      <p class="kawaii-sub">7桁のパスコードを入力してね♪</p>
+
+      <div class="code-plate">
+        <div class="code-row" id="codeRow"></div>
+      </div>
+
+      <div class="keypad" id="keypad"></div>
+
+      <div class="lock-row">
+        <button class="main-btn" id="submitBtn"><span class="btn-shine"></span><span class="lock-icon" id="lockIcon">🔒</span><span>ドキドキ解錠！</span></button>
+      </div>
+
+      <div class="result-msg" id="resultMsg"></div>
+      <div class="status-lights" id="statusLights">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 2: SLOT ============ -->
+  <div id="screen-roulette" class="screen">
+    <div class="roulette-wrap">
+      <div class="lamp-row">
+        <span class="lamp"></span><span class="lamp"></span><span class="lamp"></span>
+        <span class="lamp"></span><span class="lamp"></span><span class="lamp"></span>
+        <span class="lamp"></span>
+      </div>
+      <p class="kawaii-title">🎰 運命のスロット</p>
+      <p class="kawaii-sub">絵柄が3つそろうと大当たり！</p>
+
+      <div class="machine" id="machine">
+        <div class="reels-frame" id="reelsFrame">
+          <div class="reel-window">
+            <div class="reel-strip" id="reelStrip0"></div>
+            <div class="shade top"></div><div class="shade bottom"></div>
+            <div class="flash-overlay"></div>
+          </div>
+          <div class="reel-window">
+            <div class="reel-strip" id="reelStrip1"></div>
+            <div class="shade top"></div><div class="shade bottom"></div>
+            <div class="flash-overlay"></div>
+          </div>
+          <div class="reel-window">
+            <div class="reel-strip" id="reelStrip2"></div>
+            <div class="shade top"></div><div class="shade bottom"></div>
+            <div class="flash-overlay"></div>
+            <div class="reach-badge" id="reachBadge">リーチ!!</div>
+          </div>
+          <div class="payline"></div>
+        </div>
+      </div>
+
+      <div class="spin-result-wrap">
+        <img class="result-companion" id="resultCompanion" alt="">
+        <div class="spin-result" id="spinResult"></div>
+      </div>
+
+      <div class="lock-row">
+        <button class="main-btn" id="spinBtn"><span class="btn-shine"></span><span class="btn-label">スロットを回す</span></button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="screenFlash"></div>
+<div class="cutin" id="cutin"><div class="cutin-band"><span class="cutin-text" id="cutinText">🎉 WIN!! 🎉</span></div></div>
+<button class="admin-trigger" id="adminTrigger" title="settings">⚙</button>
+
+<!-- ============ ADMIN MODAL ============ -->
+<div class="modal-backdrop" id="pinBackdrop">
+  <div class="modal-box" style="max-width:320px;">
+    <button class="modal-close" id="pinClose">×</button>
+    <h2>管理者PIN</h2>
+    <label>PINコードを入力してください</label>
+    <input type="password" id="pinInput" maxlength="12" autocomplete="off">
+    <div class="modal-actions">
+      <button class="primary" id="pinSubmit">開く</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="adminBackdrop">
+  <div class="modal-box">
+    <button class="modal-close" id="adminClose">×</button>
+    <h2>裏側設定パネル</h2>
+
+    <label>正解コード（7桁・英数字）</label>
+    <input type="text" id="answerInput" maxlength="7">
+
+    <label>景品リスト（画像・当選確率は自由に設定できます／3つ揃うと当たり）</label>
+    <div id="prizeList"></div>
+    <button class="add-prize-btn" id="addPrizeBtn">＋ 景品を追加</button>
+    <div class="total-note" id="totalNote"></div>
+
+    <label>管理者PIN変更（任意）</label>
+    <input type="text" id="newPinInput" placeholder="変更する場合のみ入力" maxlength="12">
+
+    <div class="modal-actions">
+      <button class="primary" id="saveConfigBtn">保存する</button>
+      <button id="resetConfigBtn">初期設定に戻す</button>
+      <button id="testSpinBtn">確率テスト(1000回試行)</button>
+    </div>
+    <div id="testResult"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "escapeRouletteConfig_v3";
+  var IMAGE_LIBRARY = [
+    { file:"mascot-birthday.png",      label:"🎂 バースデー" },
+    { file:"mascot-diamond-point.png", label:"💎 ダイヤ" },
+    { file:"mascot-treasure-map.png",  label:"🗺️ 宝の地図" },
+    { file:"mascot-cocoa.png",         label:"☕ ほっこり" },
+    { file:"mascot-shh-city.png",      label:"🤫 ひみつ" },
+    { file:"mascot-run.png",           label:"🏃 だっしゅ" },
+    { file:"mascot-diamond-glass.png", label:"🔍 ルーペ" },
+    { file:"mascot-exclaim.png",       label:"❗ ひらめき" },
+    { file:"mascot-book.png",          label:"📖 なぞの書" },
+    { file:"mascot-wave.png",          label:"👋 ハロー" }
+  ];
+  var REEL_IMG_DIR = "img/thumb/";
+  var FULL_IMG_DIR = "img/";
+  var LOSE_COMPANION_IMAGE = "mascot-cocoa.png";
+
+  var DEFAULT_CONFIG = {
+    answer: "ABC1234",
+    pin: "1234",
+    prizes: [
+      { name:"当たり",     weight:30, color:"#ffdb00", image:"mascot-diamond-point.png" },
+      { name:"はずれ",     weight:70, color:"#b026ff", image:"" }
+    ]
+  };
+
+  function isLoseName(name){
+    return /はずれ|残念|外れ/.test(name||"");
+  }
+
+  function loadConfig(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      var cfg = JSON.parse(raw);
+      if(!cfg.answer || !Array.isArray(cfg.prizes) || cfg.prizes.length===0){
+        return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      }
+      return cfg;
+    }catch(e){
+      return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    }
+  }
+  function saveConfig(cfg){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+      return true;
+    }catch(e){
+      return false;
+    }
+  }
+
+  function clearChildren(el){
+    while(el.firstChild){ el.removeChild(el.firstChild); }
+  }
+
+  var config = loadConfig();
+
+  /* ========================================================
+     Simple WebAudio SFX (no external files, safe if blocked)
+  ======================================================== */
+  var audioCtx = null;
+  function getCtx(){
+    if(!audioCtx){
+      try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+      catch(e){ audioCtx = null; }
+    }
+    return audioCtx;
+  }
+  function beep(freq, duration, type, vol){
+    var ctx = getCtx();
+    if(!ctx) return;
+    try{
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = type || "square";
+      osc.frequency.value = freq;
+      gain.gain.value = vol==null?0.06:vol;
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+      osc.stop(ctx.currentTime + duration + 0.02);
+    }catch(e){}
+  }
+  function sfxCorrect(){ beep(660,0.12,"sine"); setTimeout(function(){beep(880,0.18,"sine");},130); }
+  function sfxWrong(){ beep(300,0.15,"sine",0.05); }
+  function sfxTick(){ beep(1200,0.03,"square",0.03); }
+  function sfxWin(){
+    beep(523,0.1,"sine");
+    setTimeout(function(){beep(659,0.1,"sine");},100);
+    setTimeout(function(){beep(784,0.12,"sine");},200);
+    setTimeout(function(){beep(1047,0.28,"sine",0.07);},330);
+    setTimeout(function(){beep(784,0.14,"triangle",0.05);},560);
+    setTimeout(function(){beep(1047,0.3,"triangle",0.06);},700);
+  }
+  function sfxLose(){ beep(220,0.3,"triangle",0.05); }
+  function sfxReelStop(idx){ beep(880 - idx*120, idx===2?0.18:0.1, "square", 0.06); }
+  function sfxReach(){ beep(660,0.08,"sine",0.05); setTimeout(function(){beep(880,0.14,"sine",0.06);},100); }
+
+  /* ========================================================
+     SCREEN 1: Answer board
+  ======================================================== */
+  var CODE_LEN = 7;
+  var codeRow = document.getElementById("codeRow");
+  var cells = [];
+  for(var i=0;i<CODE_LEN;i++){
+    var inp = document.createElement("input");
+    inp.type = "text";
+    inp.className = "code-cell";
+    inp.maxLength = 1;
+    inp.dataset.idx = i;
+    inp.autocomplete = "off";
+    codeRow.appendChild(inp);
+    cells.push(inp);
+  }
+
+  function setCell(idx, ch){
+    if(idx<0||idx>=CODE_LEN) return;
+    cells[idx].value = ch;
+    cells[idx].classList.toggle("filled", !!ch);
+  }
+  function currentCode(){
+    return cells.map(function(c){ return (c.value||"").toUpperCase(); }).join("");
+  }
+  function focusFirstEmpty(){
+    for(var i=0;i<CODE_LEN;i++){
+      if(!cells[i].value){ cells[i].focus(); return; }
+    }
+    cells[CODE_LEN-1].focus();
+  }
+
+  cells.forEach(function(cell, idx){
+    cell.addEventListener("input", function(){
+      var v = cell.value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+      cell.value = v.slice(-1);
+      cell.classList.toggle("filled", !!cell.value);
+      if(cell.value && idx < CODE_LEN-1){ cells[idx+1].focus(); }
+      clearResult();
+    });
+    cell.addEventListener("keydown", function(e){
+      if(e.key === "Backspace" && !cell.value && idx>0){
+        cells[idx-1].focus();
+      }
+      if(e.key === "Enter"){ submitAnswer(); }
+    });
+    cell.addEventListener("focus", function(){ cell.select(); });
+  });
+
+  /* on-screen keypad for touch/kiosk use */
+  var keypad = document.getElementById("keypad");
+  var KEYS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+  KEYS.forEach(function(k){
+    var b = document.createElement("button");
+    b.textContent = k;
+    b.type = "button";
+    b.addEventListener("click", function(){
+      for(var i=0;i<CODE_LEN;i++){
+        if(!cells[i].value){
+          setCell(i,k);
+          if(i<CODE_LEN-1) cells[i+1].focus();
+          clearResult();
+          return;
+        }
+      }
+    });
+    keypad.appendChild(b);
+  });
+  var clearBtn = document.createElement("button");
+  clearBtn.textContent = "⌫ 消去";
+  clearBtn.type = "button";
+  clearBtn.className = "wide";
+  clearBtn.addEventListener("click", function(){
+    for(var i=CODE_LEN-1;i>=0;i--){
+      if(cells[i].value){ setCell(i,""); cells[i].focus(); break; }
+    }
+    clearResult();
+  });
+  keypad.appendChild(clearBtn);
+
+  var vaultPanel = document.getElementById("vaultPanel");
+  var resultMsg = document.getElementById("resultMsg");
+  var statusLights = document.getElementById("statusLights");
+  var lockIcon = document.getElementById("lockIcon");
+  var submitBtn = document.getElementById("submitBtn");
+
+  function clearResult(){
+    vaultPanel.classList.remove("right","wrong");
+    resultMsg.textContent = "";
+    resultMsg.className = "result-msg";
+    statusLights.className = "status-lights";
+  }
+
+  function submitAnswer(){
+    var code = currentCode();
+    if(code.length < CODE_LEN){
+      resultMsg.textContent = "7桁すべて入力してね";
+      resultMsg.className = "result-msg bad";
+      return;
+    }
+    submitBtn.disabled = true;
+    vaultPanel.classList.remove("right","wrong");
+
+    var isCorrect = (code === (config.answer||"").toUpperCase());
+
+    if(isCorrect){
+      sfxCorrect();
+      vaultPanel.classList.remove("wrong");
+      vaultPanel.classList.add("right");
+      resultMsg.textContent = "せいかい♪";
+      resultMsg.className = "result-msg ok";
+      statusLights.className = "status-lights ok";
+      lockIcon.textContent = "🔓";
+      setTimeout(function(){
+        goToRoulette();
+        submitBtn.disabled = false;
+      }, 1600);
+    } else {
+      sfxWrong();
+      vaultPanel.classList.remove("right");
+      vaultPanel.classList.add("wrong");
+      resultMsg.textContent = "ざんねん、もういちど！";
+      resultMsg.className = "result-msg bad";
+      statusLights.className = "status-lights bad";
+      lockIcon.textContent = "🔒";
+      setTimeout(function(){
+        vaultPanel.classList.remove("wrong");
+        submitBtn.disabled = false;
+      }, 500);
+    }
+  }
+  submitBtn.addEventListener("click", submitAnswer);
+  focusFirstEmpty();
+
+  /* ========================================================
+     SCREEN 2: Slot machine
+  ======================================================== */
+  var screenBoard = document.getElementById("screen-board");
+  var screenRoulette = document.getElementById("screen-roulette");
+  var spinBtn = document.getElementById("spinBtn");
+  var spinResultEl = document.getElementById("spinResult");
+  var resultCompanionEl = document.getElementById("resultCompanion");
+  var machineEl = document.getElementById("machine");
+  var reachBadgeEl = document.getElementById("reachBadge");
+  var screenFlashEl = document.getElementById("screenFlash");
+  var cutinEl = document.getElementById("cutin");
+  var cutinTextEl = document.getElementById("cutinText");
+  var reelStrips = [
+    document.getElementById("reelStrip0"),
+    document.getElementById("reelStrip1"),
+    document.getElementById("reelStrip2")
+  ];
+  var reelWindows = Array.prototype.map.call(
+    document.querySelectorAll("#reelsFrame .reel-window"),
+    function(el){ return el; }
+  );
+  var LOOPS = 16;
+  function currentCellHeight(){
+    var sample = reelStrips[0] && reelStrips[0].querySelector(".reel-cell");
+    return sample ? sample.getBoundingClientRect().height : 150;
+  }
+  var REEL_DURATIONS = [3.0, 4.2, 5.6]; // seconds, cascading stop (long, suspenseful)
+  var hasSpun = false;
+
+  function goToRoulette(){
+    screenBoard.classList.remove("active");
+    screenRoulette.classList.add("active");
+    buildReels();
+  }
+
+  function getWinPrizes(){
+    var list = (config.prizes||[]).filter(function(p){
+      return Number(p.weight) > 0 && !isLoseName(p.name) && p.image;
+    });
+    if(list.length === 0){ list = DEFAULT_CONFIG.prizes.filter(function(p){ return !isLoseName(p.name); }); }
+    return list;
+  }
+
+  function imagePoolForVisuals(winPrizes){
+    var pool = [];
+    winPrizes.forEach(function(p){ if(p.image) pool.push(p.image); });
+    IMAGE_LIBRARY.forEach(function(im){ pool.push(im.file); });
+    var seen = {};
+    return pool.filter(function(f){
+      if(seen[f]) return false;
+      seen[f] = true;
+      return true;
+    });
+  }
+
+  function makeCell(imageFile){
+    var cell = document.createElement("div");
+    cell.className = "reel-cell";
+    var img = document.createElement("img");
+    img.src = REEL_IMG_DIR + imageFile;
+    img.alt = "";
+    cell.appendChild(img);
+    return cell;
+  }
+
+  function buildReels(){
+    hasSpun = false;
+    spinResultEl.textContent = "";
+    spinResultEl.className = "spin-result";
+    resultCompanionEl.className = "result-companion";
+    resultCompanionEl.src = "";
+    spinBtn.disabled = false;
+    spinBtn.querySelector(".btn-label").textContent = "スロットを回す";
+    spinBtn.classList.remove("pink");
+    machineEl.classList.remove("spinning","shake","bigshake","winglow");
+    reelWindows.forEach(function(w){ w.classList.remove("landed","reach"); });
+    reachBadgeEl.classList.remove("show");
+    screenFlashEl.classList.remove("go");
+    cutinEl.classList.remove("go");
+
+    var winPrizes = getWinPrizes();
+    var pool = imagePoolForVisuals(winPrizes);
+
+    reelStrips.forEach(function(strip){
+      clearChildren(strip);
+      strip.style.transition = "none";
+      strip.style.transform = "translateY(0px)";
+      for(var i=0;i<3;i++){
+        strip.appendChild(makeCell(pool[Math.floor(Math.random()*pool.length)]));
+      }
+    });
+  }
+
+  function pickPrizeIndex(prizes){
+    var total = prizes.reduce(function(s,p){ return s + Number(p.weight||0); }, 0);
+    if(total <= 0) return 0;
+    var r = Math.random() * total;
+    for(var i=0;i<prizes.length;i++){
+      r -= Number(prizes[i].weight||0);
+      if(r <= 0) return i;
+    }
+    return prizes.length - 1;
+  }
+
+  function buildStripSequence(pool, targetImage){
+    var seq = [];
+    for(var k=0;k<LOOPS;k++){
+      for(var j=0;j<pool.length;j++){
+        seq.push(pool[Math.floor(Math.random()*pool.length)]);
+      }
+    }
+    seq.push(pool[Math.floor(Math.random()*pool.length)]); // filler
+    seq.push(targetImage); // this lands on the payline
+    seq.push(pool[Math.floor(Math.random()*pool.length)]); // filler below
+    return seq;
+  }
+
+  function spin(){
+    if(hasSpun) return;
+    hasSpun = true;
+    spinBtn.disabled = true;
+
+    var prizes = (config.prizes && config.prizes.length) ? config.prizes : DEFAULT_CONFIG.prizes;
+    var winPrizes = getWinPrizes();
+    var pool = imagePoolForVisuals(winPrizes);
+
+    var chosenIdx = pickPrizeIndex(prizes);
+    var chosen = prizes[chosenIdx];
+    var isWin = !isLoseName(chosen.name) && Number(chosen.weight) > 0 && chosen.image;
+
+    var targets;
+    if(isWin){
+      targets = [chosen.image, chosen.image, chosen.image];
+    } else {
+      var uniquePool = pool.filter(function(s, idx){ return pool.indexOf(s) === idx; });
+      for(var i=uniquePool.length-1;i>0;i--){
+        var j2 = Math.floor(Math.random()*(i+1));
+        var tmp = uniquePool[i]; uniquePool[i]=uniquePool[j2]; uniquePool[j2]=tmp;
+      }
+      targets = uniquePool.slice(0,3);
+      while(targets.length < 3){ targets.push(pool[Math.floor(Math.random()*pool.length)]); }
+      if(targets[0]===targets[1] && targets[1]===targets[2]){
+        targets[2] = IMAGE_LIBRARY[Math.floor(Math.random()*IMAGE_LIBRARY.length)].file;
+      }
+    }
+
+    machineEl.classList.remove("shake","bigshake");
+    machineEl.classList.add("spinning");
+    reelWindows.forEach(function(w){ w.classList.remove("landed","reach"); });
+    reachBadgeEl.classList.remove("show");
+
+    var tickTimer = setInterval(function(){ sfxTick(); }, 110);
+    setTimeout(function(){ clearInterval(tickTimer); }, REEL_DURATIONS[2]*1000 - 150);
+
+    var cellH = currentCellHeight();
+    var maxDuration = 0;
+    reelStrips.forEach(function(strip, idx){
+      var seq = buildStripSequence(pool, targets[idx]);
+      clearChildren(strip);
+      seq.forEach(function(img){ strip.appendChild(makeCell(img)); });
+      var targetCellIndex = seq.length - 2; // the appended target image
+      var offset = (targetCellIndex - 1) * cellH;
+      var duration = REEL_DURATIONS[idx];
+      maxDuration = Math.max(maxDuration, duration);
+      strip.style.transition = "none";
+      strip.style.transform = "translateY(0px)";
+      void strip.offsetHeight; // force reflow so the transition below is picked up
+      strip.style.transition = "transform " + duration + "s cubic-bezier(.15,.85,.25,1.02)";
+      requestAnimationFrame(function(){
+        strip.style.transform = "translateY(-" + offset + "px)";
+      });
+
+      // per-reel landing flourish: bounce + flash + a descending "lock-in" tone
+      setTimeout(function(){
+        sfxReelStop(idx);
+        var win = reelWindows[idx];
+        win.classList.add("landed");
+        var flash = win.querySelector(".flash-overlay");
+        if(flash){ flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go"); }
+        setTimeout(function(){ win.classList.remove("landed"); }, 420);
+      }, duration*1000);
+    });
+
+    // "リーチ" suspense effect: once the first two reels lock onto the same
+    // picture (only possible when this spin is a win), highlight the last
+    // reel while it keeps spinning.
+    if(isWin){
+      setTimeout(function(){
+        sfxReach();
+        reelWindows[2].classList.add("reach");
+        reachBadgeEl.classList.add("show");
+      }, REEL_DURATIONS[1]*1000);
+    }
+
+    setTimeout(function(){
+      machineEl.classList.remove("spinning");
+      reelWindows[2].classList.remove("reach");
+      reachBadgeEl.classList.remove("show");
+
+      if(!isWin){
+        sfxLose();
+        spinResultEl.textContent = "結果：" + chosen.name + "・・・また今度ね！";
+        spinResultEl.className = "spin-result lose";
+        resultCompanionEl.src = FULL_IMG_DIR + LOSE_COMPANION_IMAGE;
+        resultCompanionEl.className = "result-companion show";
+        machineEl.classList.add("shake");
+        setTimeout(function(){ machineEl.classList.remove("shake"); }, 450);
+      } else {
+        sfxWin();
+        spinResultEl.textContent = "🎉 当選！「" + chosen.name + "」 🎉";
+        spinResultEl.className = "spin-result win";
+        resultCompanionEl.src = FULL_IMG_DIR + chosen.image;
+        resultCompanionEl.className = "result-companion show";
+        launchConfetti();
+        screenFlashEl.classList.remove("go"); void screenFlashEl.offsetWidth; screenFlashEl.classList.add("go");
+        setTimeout(function(){
+          screenFlashEl.classList.remove("go"); void screenFlashEl.offsetWidth; screenFlashEl.classList.add("go");
+        }, 550);
+        machineEl.classList.add("bigshake","winglow");
+        setTimeout(function(){ machineEl.classList.remove("bigshake"); }, 650);
+        setTimeout(function(){ machineEl.classList.remove("winglow"); }, 1500);
+        cutinTextEl.textContent = "🎉 " + chosen.name + " WIN!! 🎉";
+        cutinEl.classList.remove("go"); void cutinEl.offsetWidth; cutinEl.classList.add("go");
+        setTimeout(function(){ cutinEl.classList.remove("go"); }, 1300);
+      }
+      spinBtn.querySelector(".btn-label").textContent = "もう一度挑戦（リセット）";
+      spinBtn.classList.add("pink");
+      spinBtn.disabled = false;
+    }, maxDuration*1000 + 300);
+  }
+
+  spinBtn.addEventListener("click", function(){
+    if(!hasSpun){ spin(); }
+    else { location.reload(); }
+  });
+
+  function launchConfetti(){
+    var colors = ["#ffdb00","#00f0ff","#ff2e93","#b026ff","#39ff88","#ffffff"];
+    var burst = function(count, delayMax){
+      for(var i=0;i<count;i++){
+        (function(){
+          var el = document.createElement("div");
+          el.className = "confetti";
+          el.style.left = (Math.random()*100) + "vw";
+          el.style.background = colors[Math.floor(Math.random()*colors.length)];
+          var size = 6 + Math.random()*10;
+          el.style.width = size + "px";
+          el.style.height = (size*1.7) + "px";
+          if(Math.random() < 0.5){ el.style.borderRadius = "50%"; }
+          var dur = 2.2 + Math.random()*2.2;
+          el.style.animationDuration = dur + "s";
+          el.style.animationDelay = (Math.random()*delayMax) + "s";
+          document.body.appendChild(el);
+          setTimeout(function(){ el.remove(); }, (dur+delayMax+1)*1000);
+        })();
+      }
+    };
+    burst(90, 0.4);
+    setTimeout(function(){ burst(70, 0.3); }, 500);
+  }
+
+  /* ========================================================
+     ADMIN PANEL (hidden settings)
+  ======================================================== */
+  var adminTrigger = document.getElementById("adminTrigger");
+  var pinBackdrop = document.getElementById("pinBackdrop");
+  var pinInput = document.getElementById("pinInput");
+  var pinSubmit = document.getElementById("pinSubmit");
+  var pinClose = document.getElementById("pinClose");
+  var adminBackdrop = document.getElementById("adminBackdrop");
+  var adminClose = document.getElementById("adminClose");
+  var answerInput = document.getElementById("answerInput");
+  var newPinInput = document.getElementById("newPinInput");
+  var prizeListEl = document.getElementById("prizeList");
+  var addPrizeBtn = document.getElementById("addPrizeBtn");
+  var saveConfigBtn = document.getElementById("saveConfigBtn");
+  var resetConfigBtn = document.getElementById("resetConfigBtn");
+  var testSpinBtn = document.getElementById("testSpinBtn");
+  var testResultEl = document.getElementById("testResult");
+  var totalNoteEl = document.getElementById("totalNote");
+
+  adminTrigger.addEventListener("click", function(){
+    pinInput.value = "";
+    pinBackdrop.classList.add("active");
+    setTimeout(function(){ pinInput.focus(); }, 50);
+  });
+  pinClose.addEventListener("click", function(){ pinBackdrop.classList.remove("active"); });
+  pinInput.addEventListener("keydown", function(e){ if(e.key==="Enter") pinSubmit.click(); });
+  pinSubmit.addEventListener("click", function(){
+    if(pinInput.value === (config.pin || DEFAULT_CONFIG.pin)){
+      pinBackdrop.classList.remove("active");
+      openAdminPanel();
+    } else {
+      pinInput.value = "";
+      pinInput.placeholder = "PINが違います";
+    }
+  });
+
+  function renderPrizeRows(){
+    clearChildren(prizeListEl);
+    config.prizes.forEach(function(p, idx){
+      var row = document.createElement("div");
+      row.className = "prize-row";
+
+      var nameInp = document.createElement("input");
+      nameInp.type = "text"; nameInp.value = p.name; nameInp.placeholder = "景品名";
+      nameInp.addEventListener("input", function(){ config.prizes[idx].name = nameInp.value; });
+
+      var thumb = document.createElement("img");
+      thumb.className = "thumb-preview";
+      thumb.src = p.image ? (REEL_IMG_DIR + p.image) : "";
+      thumb.alt = "";
+
+      var imgSel = document.createElement("select");
+      var noneOpt = document.createElement("option");
+      noneOpt.value = ""; noneOpt.textContent = "（画像なし）";
+      imgSel.appendChild(noneOpt);
+      IMAGE_LIBRARY.forEach(function(im){
+        var opt = document.createElement("option");
+        opt.value = im.file; opt.textContent = im.label;
+        if(p.image === im.file) opt.selected = true;
+        imgSel.appendChild(opt);
+      });
+      imgSel.title = "3つ揃うと当たりになる画像（はずれ行では使用しません）";
+      imgSel.addEventListener("change", function(){
+        config.prizes[idx].image = imgSel.value;
+        thumb.src = imgSel.value ? (REEL_IMG_DIR + imgSel.value) : "";
+      });
+
+      var weightInp = document.createElement("input");
+      weightInp.type = "number"; weightInp.min = "0"; weightInp.step = "0.1";
+      weightInp.value = p.weight;
+      weightInp.addEventListener("input", function(){
+        config.prizes[idx].weight = Number(weightInp.value)||0;
+        updatePercentLabels();
+      });
+
+      var colorInp = document.createElement("input");
+      colorInp.type = "color"; colorInp.value = p.color || "#888888";
+      colorInp.addEventListener("input", function(){ config.prizes[idx].color = colorInp.value; });
+
+      var pctSpan = document.createElement("span");
+      pctSpan.className = "pct";
+
+      var delBtn = document.createElement("button");
+      delBtn.textContent = "✕";
+      delBtn.type = "button";
+      delBtn.addEventListener("click", function(){
+        config.prizes.splice(idx,1);
+        renderPrizeRows();
+      });
+
+      row.appendChild(nameInp);
+      row.appendChild(thumb);
+      row.appendChild(imgSel);
+      row.appendChild(weightInp);
+      row.appendChild(colorInp);
+      row.appendChild(pctSpan);
+      row.appendChild(delBtn);
+      prizeListEl.appendChild(row);
+    });
+    updatePercentLabels();
+  }
+
+  function updatePercentLabels(){
+    var total = config.prizes.reduce(function(s,p){ return s+Number(p.weight||0); },0);
+    var pctEls = prizeListEl.querySelectorAll(".pct");
+    config.prizes.forEach(function(p, idx){
+      var pct = total>0 ? (Number(p.weight||0)/total*100) : 0;
+      pctEls[idx].textContent = pct.toFixed(1) + "%";
+    });
+    totalNoteEl.textContent = "※確率は自動で正規化されます（現在の合計ウェイト: " + total.toFixed(1) + "）";
+  }
+
+  addPrizeBtn.addEventListener("click", function(){
+    config.prizes.push({ name:"新しい景品", weight:10, color:"#b026ff", image:IMAGE_LIBRARY[0].file });
+    renderPrizeRows();
+  });
+
+  function openAdminPanel(){
+    answerInput.value = config.answer || "";
+    newPinInput.value = "";
+    renderPrizeRows();
+    adminBackdrop.classList.add("active");
+    clearChildren(testResultEl);
+  }
+  adminClose.addEventListener("click", function(){ adminBackdrop.classList.remove("active"); });
+
+  saveConfigBtn.addEventListener("click", function(){
+    var ans = (answerInput.value||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
+    if(ans.length !== CODE_LEN){
+      alert("正解コードは英数字" + CODE_LEN + "桁で入力してください。");
+      return;
+    }
+    config.answer = ans;
+    if(newPinInput.value.trim()){
+      config.pin = newPinInput.value.trim();
+    }
+    config.prizes = config.prizes.filter(function(p){ return p.name && p.name.trim(); });
+    if(config.prizes.length === 0){
+      alert("景品を1つ以上設定してください。");
+      return;
+    }
+    if(saveConfig(config)){
+      alert("設定を保存しました。");
+      adminBackdrop.classList.remove("active");
+    } else {
+      alert("設定の保存に失敗しました（ブラウザのストレージ機能が無効になっている可能性があります）。今回のプレイ中は反映されますが、次回起動時には戻ります。");
+      adminBackdrop.classList.remove("active");
+    }
+  });
+
+  resetConfigBtn.addEventListener("click", function(){
+    if(confirm("初期設定に戻しますか？")){
+      config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      saveConfig(config);
+      openAdminPanel();
+    }
+  });
+
+  testSpinBtn.addEventListener("click", function(){
+    var trials = 1000;
+    var counts = {};
+    config.prizes.forEach(function(p){ counts[p.name] = 0; });
+    for(var i=0;i<trials;i++){
+      var idx = pickPrizeIndex(config.prizes);
+      counts[config.prizes[idx].name]++;
+    }
+    clearChildren(testResultEl);
+    Object.keys(counts).forEach(function(name){
+      var line = document.createElement("div");
+      line.className = "test-line";
+      line.textContent = name + ": " + counts[name] + "回 (" + (counts[name]/trials*100).toFixed(1) + "%)";
+      testResultEl.appendChild(line);
+    });
+  });
+
+  [pinBackdrop, adminBackdrop].forEach(function(bd){
+    bd.addEventListener("click", function(e){
+      if(e.target === bd) bd.classList.remove("active");
+    });
+  });
+
+})();
+</script>
+</body>
+</html>
