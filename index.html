@@ -48,7 +48,7 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    padding:28px 14px;
+    padding:24px 14px;
   }
   .screen{
     display:none;
@@ -56,8 +56,8 @@
     max-width:520px;
   }
   .screen.active{ display:block; animation:fadeIn .5s ease; }
-  #screen-roulette.screen{ max-width:min(96vw, 980px); }
-  #screen-board.screen{ max-width:min(94vw, 640px); }
+  #screen-roulette.screen{ max-width:min(96vw, 1000px); }
+  #screen-board.screen{ max-width:min(96vw, 1000px); }
   @keyframes fadeIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
 
   .kawaii-title{
@@ -122,21 +122,21 @@
     background:var(--input-bg);
     border:2px solid var(--border-dark);
     border-radius:18px;
-    padding:20px 16px;
+    padding:clamp(14px, 2.5vw, 24px);
     box-shadow:inset 0 2px 8px rgba(0,0,0,.5);
     margin-bottom:18px;
   }
   .code-row{
-    display:flex; justify-content:center; gap:8px; flex-wrap:wrap;
+    display:flex; justify-content:center; gap:clamp(6px, 1.2vw, 14px); flex-wrap:wrap;
   }
   .code-cell{
-    width:clamp(44px, 9vw, 60px); height:clamp(56px, 11vw, 78px);
+    width:clamp(44px, 6.5vw, 76px); height:clamp(56px, 8.5vw, 96px);
     background:var(--input-bg);
     border:3px solid var(--border-dark);
     border-radius:14px;
     box-shadow:inset 2px 2px 5px rgba(0,0,0,.5);
     color:#fff;
-    font-size:clamp(26px, 6vw, 34px);
+    font-size:clamp(26px, 4.5vw, 44px);
     font-weight:900;
     text-align:center;
     caret-color:var(--cyan);
@@ -173,48 +173,73 @@
     100%{ box-shadow:6px 6px 0 var(--yellow); }
   }
 
-  .kana-toggle-row{ display:flex; justify-content:center; margin-top:6px; }
+  .kana-toggle-row{ display:flex; justify-content:center; margin-top:6px; margin-bottom:10px; }
   .kana-toggle{
     font-family:inherit;
-    font-size:13px; font-weight:800;
+    font-size:clamp(13px, 1.5vw, 17px); font-weight:800;
     background:var(--input-bg);
     color:var(--cyan);
     border:2px solid var(--cyan);
     border-radius:999px;
-    padding:7px 18px;
+    padding:8px 24px;
     cursor:pointer;
     box-shadow:0 0 10px rgba(0,240,255,.25);
-    transition:transform .08s;
+    transition:transform .08s, background .15s;
   }
+  .kana-toggle:hover{ background:rgba(0,240,255,0.15); }
   .kana-toggle:active{ transform:scale(.95); }
 
-  /* on-screen keypad */
+  /* on-screen keypad - Maximized for PC */
   .keypad{
     display:grid;
-    grid-template-columns:repeat(9, 1fr);
-    gap:7px;
-    margin:18px 0 8px;
+    grid-template-columns:repeat(10, 1fr);
+    gap:clamp(5px, 0.8vw, 10px);
+    margin:18px 0 12px;
+    width:100%;
   }
   .keypad button{
-    padding:14px 0;
-    font-size:15px;
-    font-weight:800;
+    padding:clamp(12px, 1.8vh, 22px) 0;
+    font-size:clamp(15px, 2.2vw, 24px);
+    font-weight:900;
     background:var(--input-bg);
     color:var(--text-light);
     border:2px solid var(--border-dark);
-    border-radius:11px;
+    border-radius:12px;
     cursor:pointer;
     font-family:inherit;
     box-shadow:3px 3px 0 var(--border-dark);
-    transition:transform .08s, box-shadow .08s;
+    transition:transform .08s, box-shadow .08s, background .15s, border-color .15s;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    user-select:none;
+  }
+  .keypad button:hover{
+    border-color:var(--cyan);
+    background:rgba(0,240,255,0.15);
   }
   .keypad button:active{ transform:translate(3px,3px); box-shadow:none; }
+
+  /* Functional buttons (濁点, 半濁点, 小文字) */
+  .keypad button.func-btn{
+    background:#20184b;
+    color:var(--yellow);
+    border-color:var(--purple);
+    box-shadow:3px 3px 0 var(--purple);
+  }
+  .keypad button.func-btn:hover{
+    background:var(--purple);
+    color:#fff;
+  }
   .keypad button.wide{
-    grid-column:span 3;
+    grid-column:span 2;
     background:var(--pink);
     color:#fff;
     border-color:var(--border-dark);
     box-shadow:3px 3px 0 var(--border-dark);
+  }
+  .keypad button.wide:hover{
+    background:#ff0070;
   }
 
   .lock-row{ display:flex; justify-content:center; margin-top:20px; }
@@ -534,6 +559,18 @@
   .modal-close{ float:right; background:none; border:none; color:var(--text-dim); font-size:18px; cursor:pointer; }
   .total-note{ font-size:11px; color:var(--text-dim); margin-top:4px; }
   .test-line{ font-size:11px; color:var(--text-dim); }
+  .probability-settings{
+    background:var(--input-bg); border:1px solid var(--border-dark); border-radius:14px;
+    padding:10px; margin:8px 0 12px;
+  }
+  .probability-settings label{ margin-top:0; }
+  .mode-help{ font-size:11px; color:var(--text-dim); line-height:1.55; margin:6px 0 0; }
+  .inventory-settings{ display:none; margin-top:10px; }
+  .inventory-settings.active{ display:block; }
+  .inventory-summary{
+    margin-top:7px; padding:7px 9px; border-radius:9px;
+    background:rgba(0,240,255,.08); color:var(--cyan); font-size:11px; font-weight:700;
+  }
 </style>
 </head>
 <body>
@@ -575,6 +612,7 @@
   <!-- ============ SCREEN 2: SLOT ============ -->
   <div id="screen-roulette" class="screen">
     <div class="roulette-wrap">
+      <div class="suspense-banner" id="suspenseBanner">🔥 激アツ！SUPER REACH 🔥</div>
       <div class="lamp-row">
         <span class="lamp"></span><span class="lamp"></span><span class="lamp"></span>
         <span class="lamp"></span><span class="lamp"></span><span class="lamp"></span>
@@ -643,7 +681,21 @@
     <label>正解コード（ひらがな7文字）</label>
     <input type="text" id="answerInput" maxlength="7" placeholder="例：あさひのたから">
 
-    <label>景品リスト（画像・当選確率は自由に設定できます／3つ揃うと当たり）</label>
+    <label>当選確率の決め方</label>
+    <div class="probability-settings">
+      <select id="probabilityModeSelect">
+        <option value="weight">単純確率（ウェイト）</option>
+        <option value="inventory">残り人数 × 景品残数（在庫連動）</option>
+      </select>
+      <p class="mode-help" id="modeHelp"></p>
+      <div class="inventory-settings" id="inventorySettings">
+        <label>これからスロットを回す人数（残り人数）</label>
+        <input type="number" id="remainingPlayersInput" min="0" step="1" inputmode="numeric">
+        <div class="inventory-summary" id="inventorySummary"></div>
+      </div>
+    </div>
+
+    <label id="prizeListLabel">景品リスト（画像・当選確率は自由に設定できます／3つ揃うと当たり）</label>
     <div id="prizeList"></div>
     <button class="add-prize-btn" id="addPrizeBtn">＋ 景品を追加</button>
     <div class="total-note" id="totalNote"></div>
@@ -684,9 +736,11 @@
   var DEFAULT_CONFIG = {
     answer: "あさひのたから",
     pin: "1234",
+    probabilityMode: "weight",
+    remainingPlayers: 100,
     prizes: [
-      { name:"当たり",     weight:30, color:"#ffdb00", image:"mascot-diamond-point.png" },
-      { name:"はずれ",     weight:70, color:"#b026ff", image:"" }
+      { name:"当たり",     weight:30, stock:30, color:"#ffdb00", image:"mascot-diamond-point.png" },
+      { name:"はずれ",     weight:70, stock:0, color:"#b026ff", image:"" }
     ]
   };
 
@@ -705,6 +759,45 @@
   }
   var KANA_CHAR_RE = /^[ぁ-ゖァ-ヺー]$/;
 
+  var DAKUTEN_MAP = {
+    'か':'が','き':'ぎ','く':'ぐ','け':'げ','こ':'ご',
+    'さ':'ざ','し':'じ','す':'ず','せ':'ぜ','そ':'ぞ',
+    'た':'だ','ち':'ぢ','つ':'づ','て':'で','と':'ど',
+    'は':'ば','ひ':'び','ふ':'ぶ','へ':'べ','ほ':'ぼ',
+    'カ':'ガ','キ':'ギ','ク':'グ','ケ':'ゲ','コ':'ゴ',
+    'サ':'ザ','シ':'ジ','ス':'ズ','セ':'ゼ','ソ':'ゾ',
+    'タ':'ダ','チ':'ヂ','ツ':'ヅ','テ':'デ','ト':'ド',
+    'ハ':'バ','ヒ':'ビ','フ':'ブ','ヘ':'ベ','ホ':'ボ',
+    'ウ':'ヴ','う':'ゔ',
+    'が':'か','ぎ':'き','ぐ':'く','げ':'け','ご':'こ',
+    'ざ':'さ','じ':'し','ず':'す','ぜ':'せ','ぞ':'そ',
+    'だ':'た','ぢ':'ち','づ':'つ','で':'て','ど':'と',
+    'ば':'は','び':'ひ','ぶ':'ふ','べ':'へ','ぼ':'ほ',
+    'ガ':'カ','ギ':'キ','グ':'ク','ゲ':'ケ','ゴ':'コ',
+    'ザ':'サ','ジ':'シ','ズ':'ス','ゼ':'セ','ゾ':'ソ',
+    'ダ':'タ','ヂ':'チ','ヅ':'ツ','デ':'テ','ド':'ト',
+    'バ':'ハ','ビ':'ヒ','ブ':'フ','ベ':'ヘ','ボ':'ホ',
+    'ヴ':'ウ','ゔ':'う'
+  };
+  var HANDAKUTEN_MAP = {
+    'は':'ぱ','ひ':'ぴ','ふ':'ぷ','へ':'ぺ','ほ':'ぽ',
+    'ハ':'パ','ヒ':'ピ','フ':'プ','ヘ':'ペ','ホ':'ポ',
+    'ば':'ぱ','び':'ぴ','ぶ':'ぷ','べ':'ぺ','ぼ':'ぽ',
+    'バ':'パ','ビ':'ピ','ブ':'プ','ベ':'ペ','ボ':'ポ',
+    'ぱ':'は','ぴ':'ひ','ぷ':'ふ','ぺ':'へ','ぽ':'ほ',
+    'パ':'ハ','ピ':'ヒ','プ':'フ','ペ':'ヘ','ポ':'ホ'
+  };
+  var KOMOJI_MAP = {
+    'あ':'ぁ','い':'ぃ','う':'ぅ','え':'ぇ','お':'ぉ',
+    'つ':'っ','や':'ゃ','ゆ':'ゅ','よ':'ょ','わ':'ゎ',
+    'ア':'ァ','イ':'ィ','ウ':'ゥ','エ':'ェ','オ':'ォ',
+    'ツ':'ッ','ヤ':'ャ','ユ':'ュ','ヨ':'ョ','ワ':'ヮ',
+    'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お',
+    'っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ',
+    'ァ':'ア','ィ':'イ','ゥ':'ウ','ェ':'エ','ォ':'オ',
+    'ッ':'ツ','ャ':'ヤ','ュ':'ユ','ョ':'ヨ','ヮ':'ワ'
+  };
+
   function loadConfig(){
     try{
       var raw = localStorage.getItem(STORAGE_KEY);
@@ -713,10 +806,24 @@
       if(!cfg.answer || !Array.isArray(cfg.prizes) || cfg.prizes.length===0){
         return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
       }
-      return cfg;
+      return normalizeConfig(cfg);
     }catch(e){
       return JSON.parse(JSON.stringify(DEFAULT_CONFIG));
     }
+  }
+  function normalizeConfig(cfg){
+    cfg.probabilityMode = cfg.probabilityMode === "inventory" ? "inventory" : "weight";
+    var totalWeight = cfg.prizes.reduce(function(sum,p){ return sum + Math.max(0, Number(p.weight)||0); }, 0);
+    if(!Number.isFinite(Number(cfg.remainingPlayers))){ cfg.remainingPlayers = 100; }
+    cfg.remainingPlayers = Math.max(0, Math.floor(Number(cfg.remainingPlayers)||0));
+    cfg.prizes.forEach(function(p){
+      p.weight = Math.max(0, Number(p.weight)||0);
+      if(!Number.isFinite(Number(p.stock))){
+        p.stock = isLoseName(p.name) ? 0 : Math.round(totalWeight > 0 ? (p.weight / totalWeight * 100) : 0);
+      }
+      p.stock = Math.max(0, Math.floor(Number(p.stock)||0));
+    });
+    return cfg;
   }
   function saveConfig(cfg){
     try{
@@ -853,6 +960,54 @@
     kanaButtons.push(b);
   });
 
+  function transformActiveOrLastCell(map){
+    var targetIdx = -1;
+    var active = document.activeElement;
+    if(active && active.classList.contains("code-cell")){
+      targetIdx = parseInt(active.dataset.idx, 10);
+    }
+    if(targetIdx === -1 || !cells[targetIdx].value){
+      for(var i = CODE_LEN - 1; i >= 0; i--){
+        if(cells[i].value){
+          targetIdx = i;
+          break;
+        }
+      }
+    }
+    if(targetIdx >= 0 && cells[targetIdx].value){
+      var cur = cells[targetIdx].value;
+      if(map[cur]){
+        setCell(targetIdx, map[cur]);
+        cells[targetIdx].focus();
+        clearResult();
+      }
+    }
+  }
+
+  var dakuBtn = document.createElement("button");
+  dakuBtn.textContent = "゛";
+  dakuBtn.type = "button";
+  dakuBtn.className = "func-btn";
+  dakuBtn.title = "濁点をつける（が・ざ・だ・ば等）";
+  dakuBtn.addEventListener("click", function(){ transformActiveOrLastCell(DAKUTEN_MAP); });
+  keypad.appendChild(dakuBtn);
+
+  var handakuBtn = document.createElement("button");
+  handakuBtn.textContent = "゜";
+  handakuBtn.type = "button";
+  handakuBtn.className = "func-btn";
+  handakuBtn.title = "半濁点をつける（ぱ・ぴ・ぷ等）";
+  handakuBtn.addEventListener("click", function(){ transformActiveOrLastCell(HANDAKUTEN_MAP); });
+  keypad.appendChild(handakuBtn);
+
+  var komojiBtn = document.createElement("button");
+  komojiBtn.textContent = "小";
+  komojiBtn.type = "button";
+  komojiBtn.className = "func-btn";
+  komojiBtn.title = "小文字に変換（っ・ゃ・ゅ・ょ等）";
+  komojiBtn.addEventListener("click", function(){ transformActiveOrLastCell(KOMOJI_MAP); });
+  keypad.appendChild(komojiBtn);
+
   var clearBtn = document.createElement("button");
   clearBtn.textContent = "⌫ 消去";
   clearBtn.type = "button";
@@ -939,7 +1094,7 @@
   focusFirstEmpty();
 
   /* ========================================================
-     SCREEN 2: Slot machine
+     SCREEN 2: Slot machine (Interactive Step-by-Step & 20s Suspense)
   ======================================================== */
   var screenBoard = document.getElementById("screen-board");
   var screenRoulette = document.getElementById("screen-roulette");
@@ -948,6 +1103,7 @@
   var resultCompanionEl = document.getElementById("resultCompanion");
   var machineEl = document.getElementById("machine");
   var reachBadgeEl = document.getElementById("reachBadge");
+  var suspenseBannerEl = document.getElementById("suspenseBanner");
   var screenFlashEl = document.getElementById("screenFlash");
   var cutinEl = document.getElementById("cutin");
   var cutinTextEl = document.getElementById("cutinText");
@@ -960,13 +1116,34 @@
     document.querySelectorAll("#reelsFrame .reel-window"),
     function(el){ return el; }
   );
-  var LOOPS = 16;
+
   function currentCellHeight(){
     var sample = reelStrips[0] && reelStrips[0].querySelector(".reel-cell");
     return sample ? sample.getBoundingClientRect().height : 150;
   }
-  var REEL_DURATIONS = [3.0, 4.2, 5.6]; // seconds, cascading stop (long, suspenseful)
-  var hasSpun = false;
+
+  /* Slot machine state management */
+  // 0: Ready
+  // 1: Spinning All (Waiting for Stop Reel 1)
+  // 2: Reel 0 Stopped (Waiting for Stop Reel 2)
+  // 3: Reel 1 Stopped (Waiting for Stop Reel 3)
+  // 4: Reel 2 20-second Dramatic Suspense In Progress
+  // 5: Finished
+  var slotState = 0;
+  var currentTargets = [];
+  var currentChosen = null;
+  var currentIsWin = false;
+  var currentPool = [];
+  var reelSequences = [];
+  var tickTimer = null;
+  var dramaTimers = [];
+  var currentDrawCommitted = false;
+  var currentDrawMode = "weight";
+
+  function clearDramaTimers(){
+    dramaTimers.forEach(function(t){ clearTimeout(t); clearInterval(t); });
+    dramaTimers = [];
+  }
 
   function goToRoulette(){
     screenBoard.classList.remove("active");
@@ -976,10 +1153,50 @@
 
   function getWinPrizes(){
     var list = (config.prizes||[]).filter(function(p){
-      return Number(p.weight) > 0 && !isLoseName(p.name) && p.image;
+      var available = config.probabilityMode === "inventory" ? Number(p.stock) > 0 : Number(p.weight) > 0;
+      return available && !isLoseName(p.name) && p.image;
     });
     if(list.length === 0){ list = DEFAULT_CONFIG.prizes.filter(function(p){ return !isLoseName(p.name); }); }
     return list;
+  }
+
+  function getLosePrize(){
+    var lose = (config.prizes||[]).filter(function(p){ return isLoseName(p.name) || !p.image; })[0];
+    return lose || { name:"はずれ", weight:0, stock:0, color:"#b026ff", image:"" };
+  }
+
+  function totalPrizeStock(){
+    return (config.prizes||[]).reduce(function(sum,p){
+      if(isLoseName(p.name) || !p.image) return sum;
+      return sum + Math.max(0, Math.floor(Number(p.stock)||0));
+    }, 0);
+  }
+
+  function pickPrizeForCurrentMode(){
+    if(config.probabilityMode !== "inventory"){
+      return config.prizes[pickPrizeIndex(config.prizes)];
+    }
+    var players = Math.max(0, Math.floor(Number(config.remainingPlayers)||0));
+    if(players <= 0) return getLosePrize();
+    var ticket = Math.floor(Math.random() * players);
+    var cursor = 0;
+    for(var i=0;i<config.prizes.length;i++){
+      var p = config.prizes[i];
+      if(isLoseName(p.name) || !p.image) continue;
+      cursor += Math.max(0, Math.floor(Number(p.stock)||0));
+      if(ticket < cursor) return p;
+    }
+    return getLosePrize();
+  }
+
+  function commitInventoryDraw(){
+    if(currentDrawCommitted || currentDrawMode !== "inventory") return;
+    currentDrawCommitted = true;
+    config.remainingPlayers = Math.max(0, Math.floor(Number(config.remainingPlayers)||0) - 1);
+    if(currentIsWin && currentChosen && !isLoseName(currentChosen.name)){
+      currentChosen.stock = Math.max(0, Math.floor(Number(currentChosen.stock)||0) - 1);
+    }
+    saveConfig(config);
   }
 
   function imagePoolForVisuals(winPrizes){
@@ -1005,31 +1222,82 @@
   }
 
   function buildReels(){
-    hasSpun = false;
+    slotState = 0;
+    currentDrawCommitted = false;
+    currentDrawMode = config.probabilityMode || "weight";
+    clearDramaTimers();
+    if(tickTimer) clearInterval(tickTimer);
     spinResultEl.textContent = "";
     spinResultEl.className = "spin-result";
     resultCompanionEl.className = "result-companion";
     resultCompanionEl.src = "";
     spinBtn.disabled = false;
-    spinBtn.querySelector(".btn-label").textContent = "スロットを回す";
+    spinBtn.querySelector(".btn-label").textContent = "🎰 スロットを止める！";
     spinBtn.classList.remove("pink");
-    machineEl.classList.remove("spinning","shake","bigshake","winglow");
+    machineEl.classList.remove("spinning","shake","bigshake","winglow","rainbow-glow");
     reelWindows.forEach(function(w){ w.classList.remove("landed","reach"); });
     reachBadgeEl.classList.remove("show");
+    suspenseBannerEl.classList.remove("show");
+    suspenseBannerEl.textContent = "🔥 激アツ！SUPER REACH 🔥";
     screenFlashEl.classList.remove("go");
     cutinEl.classList.remove("go");
 
+    // Pre-calculate target prize & strip sequences so reels spin continuously from the start
     var winPrizes = getWinPrizes();
-    var pool = imagePoolForVisuals(winPrizes);
+    currentPool = imagePoolForVisuals(winPrizes);
 
-    reelStrips.forEach(function(strip){
+    var noPlayersLeft = currentDrawMode === "inventory" && Number(config.remainingPlayers) <= 0;
+    currentChosen = pickPrizeForCurrentMode();
+    currentIsWin = !noPlayersLeft && !isLoseName(currentChosen.name) && currentChosen.image &&
+      (currentDrawMode === "inventory" ? Number(currentChosen.stock) > 0 : Number(currentChosen.weight) > 0);
+
+    if(currentIsWin){
+      currentTargets = [currentChosen.image, currentChosen.image, currentChosen.image];
+    } else {
+      var uniquePool = currentPool.filter(function(s, idx){ return currentPool.indexOf(s) === idx; });
+      for(var i=uniquePool.length-1;i>0;i--){
+        var j2 = Math.floor(Math.random()*(i+1));
+        var tmp = uniquePool[i]; uniquePool[i]=uniquePool[j2]; uniquePool[j2]=tmp;
+      }
+      currentTargets = uniquePool.slice(0,3);
+      while(currentTargets.length < 3){ currentTargets.push(currentPool[Math.floor(Math.random()*currentPool.length)]); }
+      if(currentTargets[0]===currentTargets[1] && currentTargets[1]===currentTargets[2]){
+        currentTargets[2] = IMAGE_LIBRARY[Math.floor(Math.random()*IMAGE_LIBRARY.length)].file;
+      }
+    }
+
+    // Build strip sequences
+    reelSequences = [
+      buildStripSequence(currentPool, currentTargets[0], 12),
+      buildStripSequence(currentPool, currentTargets[1], 12),
+      buildStripSequence(currentPool, currentTargets[2], 50)
+    ];
+
+    // Start all reels spinning immediately and continuously
+    reelStrips.forEach(function(strip, idx){
       clearChildren(strip);
+      reelSequences[idx].forEach(function(img){ strip.appendChild(makeCell(img)); });
       strip.style.transition = "none";
       strip.style.transform = "translateY(0px)";
-      for(var i=0;i<3;i++){
-        strip.appendChild(makeCell(pool[Math.floor(Math.random()*pool.length)]));
-      }
+      void strip.offsetHeight;
+      strip.style.transition = "transform 0.6s linear";
+      strip.style.transform = "translateY(-" + (currentCellHeight() * 8) + "px)";
     });
+
+    if(noPlayersLeft){
+      reelStrips.forEach(function(strip){
+        strip.style.transition = "none";
+        strip.style.transform = "translateY(0px)";
+      });
+      spinResultEl.textContent = "抽選予定人数に達しました。管理画面で残り人数を設定してください。";
+      spinResultEl.className = "spin-result lose";
+      spinBtn.querySelector(".btn-label").textContent = "抽選終了";
+      spinBtn.disabled = true;
+      return;
+    }
+
+    machineEl.classList.add("spinning");
+    tickTimer = setInterval(function(){ sfxTick(); }, 90);
   }
 
   function pickPrizeIndex(prizes){
@@ -1043,104 +1311,190 @@
     return prizes.length - 1;
   }
 
-  function buildStripSequence(pool, targetImage){
+  function buildStripSequence(pool, targetImage, loopCount){
+    var count = loopCount || 16;
     var seq = [];
-    for(var k=0;k<LOOPS;k++){
+    for(var k=0;k<count;k++){
       for(var j=0;j<pool.length;j++){
         seq.push(pool[Math.floor(Math.random()*pool.length)]);
       }
     }
     seq.push(pool[Math.floor(Math.random()*pool.length)]); // filler
-    seq.push(targetImage); // this lands on the payline
+    seq.push(targetImage); // target on payline
     seq.push(pool[Math.floor(Math.random()*pool.length)]); // filler below
     return seq;
   }
 
-  function spin(){
-    if(hasSpun) return;
-    hasSpun = true;
+  function handleSlotButtonClick(){
+    if(slotState === 5){
+      // Reset and start spinning again
+      buildReels();
+      return;
+    }
+
+    if(slotState !== 0) return; // Prevent multiple clicks during sequence
+    slotState = 1;
+    commitInventoryDraw();
+
+    // Single button click triggers automatic step-by-step stopping sequence!
     spinBtn.disabled = true;
+    spinBtn.querySelector(".btn-label").textContent = "✨ 運命のストップ演出中... ✨";
+    sfxTick();
 
-    var prizes = (config.prizes && config.prizes.length) ? config.prizes : DEFAULT_CONFIG.prizes;
-    var winPrizes = getWinPrizes();
-    var pool = imagePoolForVisuals(winPrizes);
+    // STEP 1: Stop Reel 0 after 1.5 seconds
+    dramaTimers.push(setTimeout(function(){
+      stopReel(0, 0.4);
 
-    var chosenIdx = pickPrizeIndex(prizes);
-    var chosen = prizes[chosenIdx];
-    var isWin = !isLoseName(chosen.name) && Number(chosen.weight) > 0 && chosen.image;
+      // STEP 2: Stop Reel 1 after another 2.0 seconds
+      dramaTimers.push(setTimeout(function(){
+        stopReel(1, 0.4);
 
-    var targets;
-    if(isWin){
-      targets = [chosen.image, chosen.image, chosen.image];
-    } else {
-      var uniquePool = pool.filter(function(s, idx){ return pool.indexOf(s) === idx; });
-      for(var i=uniquePool.length-1;i>0;i--){
-        var j2 = Math.floor(Math.random()*(i+1));
-        var tmp = uniquePool[i]; uniquePool[i]=uniquePool[j2]; uniquePool[j2]=tmp;
-      }
-      targets = uniquePool.slice(0,3);
-      while(targets.length < 3){ targets.push(pool[Math.floor(Math.random()*pool.length)]); }
-      if(targets[0]===targets[1] && targets[1]===targets[2]){
-        targets[2] = IMAGE_LIBRARY[Math.floor(Math.random()*IMAGE_LIBRARY.length)].file;
-      }
-    }
+        // Reach Check
+        var isReach = currentIsWin || (currentTargets[0] === currentTargets[1]);
+        if(isReach){
+          setTimeout(function(){
+            sfxReach();
+            reelWindows[2].classList.add("reach");
+            reachBadgeEl.classList.add("show");
+          }, 450);
+        }
 
-    machineEl.classList.remove("shake","bigshake");
-    machineEl.classList.add("spinning");
-    reelWindows.forEach(function(w){ w.classList.remove("landed","reach"); });
-    reachBadgeEl.classList.remove("show");
+        // STEP 3: Start 20-Second Dramatic Suspense for Reel 2 smoothly after 0.5s
+        dramaTimers.push(setTimeout(function(){
+          start20SecondDramaticSpin();
+        }, 500));
 
-    var tickTimer = setInterval(function(){ sfxTick(); }, 110);
-    setTimeout(function(){ clearInterval(tickTimer); }, REEL_DURATIONS[2]*1000 - 150);
+      }, 2000));
 
+    }, 1500));
+  }
+
+  function stopReel(idx, durationSec){
+    sfxReelStop(idx);
+    var strip = reelStrips[idx];
     var cellH = currentCellHeight();
-    var maxDuration = 0;
-    reelStrips.forEach(function(strip, idx){
-      var seq = buildStripSequence(pool, targets[idx]);
-      clearChildren(strip);
-      seq.forEach(function(img){ strip.appendChild(makeCell(img)); });
-      var targetCellIndex = seq.length - 2; // the appended target image
-      var offset = (targetCellIndex - 1) * cellH;
-      var duration = REEL_DURATIONS[idx];
-      maxDuration = Math.max(maxDuration, duration);
+    var seq = reelSequences[idx];
+    var targetCellIndex = seq.length - 2;
+    var offset = (targetCellIndex - 1) * cellH;
+
+    strip.style.transition = "transform " + durationSec + "s cubic-bezier(.15,.85,.25,1.02)";
+    strip.style.transform = "translateY(-" + offset + "px)";
+
+    var win = reelWindows[idx];
+    win.classList.add("landed");
+    var flash = win.querySelector(".flash-overlay");
+    if(flash){ flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go"); }
+    setTimeout(function(){ win.classList.remove("landed"); }, 420);
+  }
+
+  function start20SecondDramaticSpin(){
+    var strip = reelStrips[2];
+    var cellH = currentCellHeight();
+    var seq = reelSequences[2];
+    var targetCellIndex = seq.length - 2;
+    var finalOffset = (targetCellIndex - 1) * cellH;
+
+    // --- PHASE 1 (0s ~ 4s): High Speed & Super Reach Banner ---
+    suspenseBannerEl.textContent = "🔥 激アツ！SUPER REACH 🔥";
+    suspenseBannerEl.classList.add("show");
+    machineEl.classList.add("shake");
+    sfxReach();
+
+    // Move smoothly to 35% of target distance during 4s
+    strip.style.transition = "transform 4s linear";
+    strip.style.transform = "translateY(-" + (finalOffset * 0.35) + "px)";
+
+    // --- PHASE 2 (4s ~ 8s): Fake Freeze & Rewind Kick-back ---
+    dramaTimers.push(setTimeout(function(){
+      // Fake sudden freeze at 4.0s
       strip.style.transition = "none";
-      strip.style.transform = "translateY(0px)";
-      void strip.offsetHeight; // force reflow so the transition below is picked up
-      strip.style.transition = "transform " + duration + "s cubic-bezier(.15,.85,.25,1.02)";
-      requestAnimationFrame(function(){
-        strip.style.transform = "translateY(-" + offset + "px)";
-      });
+      machineEl.classList.remove("shake");
+      suspenseBannerEl.textContent = "!? 奇跡のバックステップ演出 !?";
+      sfxTick();
 
-      // per-reel landing flourish: bounce + flash + a descending "lock-in" tone
-      setTimeout(function(){
-        sfxReelStop(idx);
-        var win = reelWindows[idx];
-        win.classList.add("landed");
-        var flash = win.querySelector(".flash-overlay");
-        if(flash){ flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go"); }
-        setTimeout(function(){ win.classList.remove("landed"); }, 420);
-      }, duration*1000);
-    });
+      // Back-step rewind animation after 0.4s
+      dramaTimers.push(setTimeout(function(){
+        cutinTextEl.textContent = "🔥 期待度 80% OVER!! 🔥";
+        cutinEl.classList.remove("go"); void cutinEl.offsetWidth; cutinEl.classList.add("go");
+        sfxWin();
+        // Fast rewind back slightly
+        strip.style.transition = "transform 0.4s ease-out";
+        strip.style.transform = "translateY(-" + (finalOffset * 0.30) + "px)";
 
-    // "リーチ" suspense effect: once the first two reels lock onto the same
-    // picture (only possible when this spin is a win), highlight the last
-    // reel while it keeps spinning.
-    if(isWin){
-      setTimeout(function(){
-        sfxReach();
-        reelWindows[2].classList.add("reach");
-        reachBadgeEl.classList.add("show");
-      }, REEL_DURATIONS[1]*1000);
-    }
+        // Then accelerate forward to 65% distance by 8.0s
+        dramaTimers.push(setTimeout(function(){
+          strip.style.transition = "transform 3.2s cubic-bezier(.2,.8,.3,1)";
+          strip.style.transform = "translateY(-" + (finalOffset * 0.65) + "px)";
+        }, 400));
+      }, 400));
+    }, 4000));
 
-    setTimeout(function(){
-      machineEl.classList.remove("spinning");
+    // --- PHASE 3 (8s ~ 13s): Rainbow Aura & Heartbeat ---
+    dramaTimers.push(setTimeout(function(){
+      machineEl.classList.add("rainbow-glow");
+      suspenseBannerEl.textContent = "🌈 覚醒！レインボーオーラ 🌈";
+      sfxReach();
+
+      // Heartbeat pulse SE
+      var hbCount = 0;
+      var hbInterval = setInterval(function(){
+        sfxTick();
+        hbCount++;
+        if(hbCount >= 10) clearInterval(hbInterval);
+      }, 500);
+      dramaTimers.push(hbInterval);
+
+      // Decelerate smoothly to 88% distance by 13.0s
+      strip.style.transition = "transform 5s cubic-bezier(.1,.7,.2,1)";
+      strip.style.transform = "translateY(-" + (finalOffset * 0.88) + "px)";
+    }, 8000));
+
+    // --- PHASE 4 (13s ~ 17.5s): Ultra Slow Frame-by-Frame Move ---
+    dramaTimers.push(setTimeout(function(){
+      machineEl.classList.remove("rainbow-glow");
+      suspenseBannerEl.textContent = "👀 運命のコマ送り...！！ 👀";
+
+      // Super slow frame move towards 97.5% distance by 17.5s
+      strip.style.transition = "transform 4.5s cubic-bezier(.05,.9,.1,1)";
+      strip.style.transform = "translateY(-" + (finalOffset * 0.975) + "px)";
+
+      // Step sound effects during frame-by-frame
+      var stepCount = 0;
+      var stepInterval = setInterval(function(){
+        sfxTick();
+        stepCount++;
+        if(stepCount >= 9) clearInterval(stepInterval);
+      }, 500);
+      dramaTimers.push(stepInterval);
+    }, 13000));
+
+    // --- PHASE 5 (17.5s ~ 20s): Lock-on Tremble & Final Impact Stop ---
+    dramaTimers.push(setTimeout(function(){
+      suspenseBannerEl.textContent = "✨ 運命の瞬間...！！ ✨";
+      // Lock-on tremble just before final stop
+      strip.style.transition = "transform 1.5s ease-out";
+      strip.style.transform = "translateY(-" + (finalOffset * 0.992) + "px)";
+
+      // At 19.0s: tremble on exact target line
+      dramaTimers.push(setTimeout(function(){
+        reelWindows[2].classList.add("landed");
+        sfxTick();
+      }, 1500));
+    }, 17500));
+
+    // --- FINALE (20.0s): Big Impact Landing & Result ---
+    dramaTimers.push(setTimeout(function(){
+      if(tickTimer) clearInterval(tickTimer);
+      stopReel(2, 0.2);
+      machineEl.classList.remove("spinning","shake","rainbow-glow");
       reelWindows[2].classList.remove("reach");
       reachBadgeEl.classList.remove("show");
+      suspenseBannerEl.classList.remove("show");
 
-      if(!isWin){
+      // Show Win / Lose result
+      if(!currentIsWin){
         sfxLose();
-        spinResultEl.textContent = "結果：" + chosen.name + "・・・また今度ね！";
+        spinResultEl.textContent = "結果：" + currentChosen.name + "・・・また今度ね！";
         spinResultEl.className = "spin-result lose";
         resultCompanionEl.src = FULL_IMG_DIR + LOSE_COMPANION_IMAGE;
         resultCompanionEl.className = "result-companion show";
@@ -1148,9 +1502,9 @@
         setTimeout(function(){ machineEl.classList.remove("shake"); }, 450);
       } else {
         sfxWin();
-        spinResultEl.textContent = "🎉 当選！「" + chosen.name + "」 🎉";
+        spinResultEl.textContent = "🎉 当選！「" + currentChosen.name + "」 🎉";
         spinResultEl.className = "spin-result win";
-        resultCompanionEl.src = FULL_IMG_DIR + chosen.image;
+        resultCompanionEl.src = FULL_IMG_DIR + currentChosen.image;
         resultCompanionEl.className = "result-companion show";
         launchConfetti();
         screenFlashEl.classList.remove("go"); void screenFlashEl.offsetWidth; screenFlashEl.classList.add("go");
@@ -1160,20 +1514,19 @@
         machineEl.classList.add("bigshake","winglow");
         setTimeout(function(){ machineEl.classList.remove("bigshake"); }, 650);
         setTimeout(function(){ machineEl.classList.remove("winglow"); }, 1500);
-        cutinTextEl.textContent = "🎉 " + chosen.name + " WIN!! 🎉";
+        cutinTextEl.textContent = "🎉 " + currentChosen.name + " WIN!! 🎉";
         cutinEl.classList.remove("go"); void cutinEl.offsetWidth; cutinEl.classList.add("go");
         setTimeout(function(){ cutinEl.classList.remove("go"); }, 1300);
       }
+
+      slotState = 5;
       spinBtn.querySelector(".btn-label").textContent = "もう一度挑戦（リセット）";
       spinBtn.classList.add("pink");
       spinBtn.disabled = false;
-    }, maxDuration*1000 + 300);
+    }, 20000));
   }
 
-  spinBtn.addEventListener("click", function(){
-    if(!hasSpun){ spin(); }
-    else { location.reload(); }
-  });
+  spinBtn.addEventListener("click", handleSlotButtonClick);
 
   function launchConfetti(){
     var colors = ["#ffdb00","#00f0ff","#ff2e93","#b026ff","#39ff88","#ffffff"];
@@ -1219,6 +1572,12 @@
   var testSpinBtn = document.getElementById("testSpinBtn");
   var testResultEl = document.getElementById("testResult");
   var totalNoteEl = document.getElementById("totalNote");
+  var probabilityModeSelect = document.getElementById("probabilityModeSelect");
+  var modeHelpEl = document.getElementById("modeHelp");
+  var inventorySettingsEl = document.getElementById("inventorySettings");
+  var remainingPlayersInput = document.getElementById("remainingPlayersInput");
+  var inventorySummaryEl = document.getElementById("inventorySummary");
+  var prizeListLabelEl = document.getElementById("prizeListLabel");
 
   adminTrigger.addEventListener("click", function(){
     pinInput.value = "";
@@ -1245,7 +1604,11 @@
 
       var nameInp = document.createElement("input");
       nameInp.type = "text"; nameInp.value = p.name; nameInp.placeholder = "景品名";
-      nameInp.addEventListener("input", function(){ config.prizes[idx].name = nameInp.value; });
+      nameInp.addEventListener("input", function(){
+        config.prizes[idx].name = nameInp.value;
+        stockInp.disabled = isLoseName(nameInp.value) || !config.prizes[idx].image;
+        updatePercentLabels();
+      });
 
       var thumb = document.createElement("img");
       thumb.className = "thumb-preview";
@@ -1266,13 +1629,29 @@
       imgSel.addEventListener("change", function(){
         config.prizes[idx].image = imgSel.value;
         thumb.src = imgSel.value ? (REEL_IMG_DIR + imgSel.value) : "";
+        stockInp.disabled = isLoseName(config.prizes[idx].name) || !imgSel.value;
+        updatePercentLabels();
       });
 
       var weightInp = document.createElement("input");
       weightInp.type = "number"; weightInp.min = "0"; weightInp.step = "0.1";
       weightInp.value = p.weight;
+      weightInp.className = "weight-input";
+      weightInp.title = "単純確率モードのウェイト";
       weightInp.addEventListener("input", function(){
         config.prizes[idx].weight = Number(weightInp.value)||0;
+        updatePercentLabels();
+      });
+
+      var stockInp = document.createElement("input");
+      stockInp.type = "number"; stockInp.min = "0"; stockInp.step = "1";
+      stockInp.value = Math.max(0, Math.floor(Number(p.stock)||0));
+      stockInp.className = "stock-input";
+      stockInp.title = "残っている景品数";
+      stockInp.disabled = isLoseName(p.name) || !p.image;
+      stockInp.addEventListener("input", function(){
+        config.prizes[idx].stock = Math.max(0, Math.floor(Number(stockInp.value)||0));
+        stockInp.value = config.prizes[idx].stock;
         updatePercentLabels();
       });
 
@@ -1295,6 +1674,7 @@
       row.appendChild(thumb);
       row.appendChild(imgSel);
       row.appendChild(weightInp);
+      row.appendChild(stockInp);
       row.appendChild(colorInp);
       row.appendChild(pctSpan);
       row.appendChild(delBtn);
@@ -1306,22 +1686,72 @@
   function updatePercentLabels(){
     var total = config.prizes.reduce(function(s,p){ return s+Number(p.weight||0); },0);
     var pctEls = prizeListEl.querySelectorAll(".pct");
+    var weightInputs = prizeListEl.querySelectorAll(".weight-input");
+    var stockInputs = prizeListEl.querySelectorAll(".stock-input");
+    var inventoryMode = config.probabilityMode === "inventory";
+    var players = Math.max(0, Math.floor(Number(config.remainingPlayers)||0));
+    var stockTotal = totalPrizeStock();
+    var loseShown = false;
     config.prizes.forEach(function(p, idx){
-      var pct = total>0 ? (Number(p.weight||0)/total*100) : 0;
+      weightInputs[idx].style.display = inventoryMode ? "none" : "block";
+      stockInputs[idx].style.display = inventoryMode ? "block" : "none";
+      var pct;
+      if(inventoryMode){
+        if(isLoseName(p.name) || !p.image){
+          pct = loseShown ? 0 : (players > 0 ? Math.max(0, players-stockTotal) / players * 100 : 0);
+          loseShown = true;
+        } else {
+          pct = players > 0 ? Math.max(0, Number(p.stock)||0) / players * 100 : 0;
+        }
+      } else {
+        pct = total>0 ? (Number(p.weight||0)/total*100) : 0;
+      }
       pctEls[idx].textContent = pct.toFixed(1) + "%";
     });
-    totalNoteEl.textContent = "※確率は自動で正規化されます（現在の合計ウェイト: " + total.toFixed(1) + "）";
+    if(inventoryMode){
+      totalNoteEl.textContent = "※各景品の確率 = 残り景品数 ÷ 残り人数。はずれ確率は自動計算されます。";
+      inventorySummaryEl.textContent = "残り人数 " + players + "人 ／ 景品残数 合計 " + stockTotal + "個 ／ はずれ枠 " + Math.max(0, players-stockTotal) + "人分";
+      inventorySummaryEl.style.color = stockTotal > players ? "var(--pink)" : "var(--cyan)";
+    } else {
+      totalNoteEl.textContent = "※確率は自動で正規化されます（現在の合計ウェイト: " + total.toFixed(1) + "）";
+    }
   }
 
+  function updateProbabilityModeUI(){
+    var inventoryMode = config.probabilityMode === "inventory";
+    probabilityModeSelect.value = config.probabilityMode;
+    inventorySettingsEl.classList.toggle("active", inventoryMode);
+    modeHelpEl.textContent = inventoryMode
+      ? "抽選するたびに残り人数が1人減り、当選時はその景品の残数も1個減ります。残数に合わせて当選確率を自動調整します。"
+      : "各景品のウェイト比率を、そのまま毎回の当選確率として使用します。";
+    prizeListLabelEl.textContent = inventoryMode
+      ? "景品リスト（数値欄は現在の景品残数）"
+      : "景品リスト（数値欄は確率ウェイト／3つ揃うと当たり）";
+    updatePercentLabels();
+  }
+
+  probabilityModeSelect.addEventListener("change", function(){
+    config.probabilityMode = probabilityModeSelect.value === "inventory" ? "inventory" : "weight";
+    updateProbabilityModeUI();
+  });
+  remainingPlayersInput.addEventListener("input", function(){
+    config.remainingPlayers = Math.max(0, Math.floor(Number(remainingPlayersInput.value)||0));
+    remainingPlayersInput.value = config.remainingPlayers;
+    updatePercentLabels();
+  });
+
   addPrizeBtn.addEventListener("click", function(){
-    config.prizes.push({ name:"新しい景品", weight:10, color:"#b026ff", image:IMAGE_LIBRARY[0].file });
+    config.prizes.push({ name:"新しい景品", weight:10, stock:1, color:"#b026ff", image:IMAGE_LIBRARY[0].file });
     renderPrizeRows();
   });
 
   function openAdminPanel(){
     answerInput.value = config.answer || "";
     newPinInput.value = "";
+    probabilityModeSelect.value = config.probabilityMode || "weight";
+    remainingPlayersInput.value = Math.max(0, Math.floor(Number(config.remainingPlayers)||0));
     renderPrizeRows();
+    updateProbabilityModeUI();
     adminBackdrop.classList.add("active");
     clearChildren(testResultEl);
   }
@@ -1342,6 +1772,11 @@
       alert("景品を1つ以上設定してください。");
       return;
     }
+    config = normalizeConfig(config);
+    if(config.probabilityMode === "inventory" && totalPrizeStock() > config.remainingPlayers){
+      alert("景品の残数合計が、スロットを回す残り人数を超えています。人数または景品残数を調整してください。");
+      return;
+    }
     if(saveConfig(config)){
       alert("設定を保存しました。");
       adminBackdrop.classList.remove("active");
@@ -1353,7 +1788,7 @@
 
   resetConfigBtn.addEventListener("click", function(){
     if(confirm("初期設定に戻しますか？")){
-      config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+      config = normalizeConfig(JSON.parse(JSON.stringify(DEFAULT_CONFIG)));
       saveConfig(config);
       openAdminPanel();
     }
@@ -1364,8 +1799,9 @@
     var counts = {};
     config.prizes.forEach(function(p){ counts[p.name] = 0; });
     for(var i=0;i<trials;i++){
-      var idx = pickPrizeIndex(config.prizes);
-      counts[config.prizes[idx].name]++;
+      var chosen = pickPrizeForCurrentMode();
+      if(counts[chosen.name] == null) counts[chosen.name] = 0;
+      counts[chosen.name]++;
     }
     clearChildren(testResultEl);
     Object.keys(counts).forEach(function(name){
