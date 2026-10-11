@@ -734,7 +734,7 @@
   var LOSE_COMPANION_IMAGE = "mascot-cocoa.png";
 
   var DEFAULT_CONFIG = {
-    answer: "あさひのたから",
+    answer: "スポまるメダル",
     pin: "1234",
     probabilityMode: "weight",
     remainingPlayers: 100,
@@ -1021,18 +1021,7 @@
   keypad.appendChild(clearBtn);
 
   kanaToggleBtn.addEventListener("click", function(){
-    // convert whatever is already typed into the newly selected script too,
-    // so the board stays visually consistent after switching.
     var toKatakana = kanaMode === "hiragana";
-    cells.forEach(function(cell){
-      if(!cell.value) return;
-      if(toKatakana){
-        var idx = HIRAGANA_LIST.indexOf(cell.value);
-        if(idx !== -1) cell.value = KATAKANA_LIST[idx];
-      } else {
-        cell.value = toHiragana(cell.value);
-      }
-    });
     kanaMode = toKatakana ? "katakana" : "hiragana";
     kanaToggleBtn.textContent = toKatakana ? "ひらがなに切替" : "カタカナに切替";
     var list = currentKanaList();
@@ -1123,11 +1112,9 @@
   }
 
   /* Slot machine state management */
-  // 0: Ready
-  // 1: Spinning All (Waiting for Stop Reel 1)
-  // 2: Reel 0 Stopped (Waiting for Stop Reel 2)
-  // 3: Reel 1 Stopped (Waiting for Stop Reel 3)
-  // 4: Reel 2 20-second Dramatic Suspense In Progress
+  // 0: Ready (waiting for start)
+  // 1: All reels spinning (waiting for the second button press)
+  // 2: Automatic stop sequence in progress
   // 5: Finished
   var slotState = 0;
   var currentTargets = [];
@@ -1137,12 +1124,116 @@
   var reelSequences = [];
   var tickTimer = null;
   var dramaTimers = [];
+  var spinAnimationFrame = null;
+  var spinStartedAt = 0;
+  var reelSpinning = [false, false, false];
+  var reelSpinSpeeds = [680, 760, 840];
   var currentDrawCommitted = false;
   var currentDrawMode = "weight";
+  var currentDramaPattern = null;
+  var DRAMA_PATTERNS = [
+    { id:"super-reach", name:"王道スーパーリーチ", duration:11000, phases:[
+      { at:0, text:"🔥 激アツ！SUPER REACH 🔥", progress:.28, move:2600, effect:"shake", sound:"reach" },
+      { at:2800, text:"!? 奇跡のバックステップ !?", progress:.20, move:500, cutin:"🔥 期待度 80% OVER!! 🔥" },
+      { at:3800, text:"🌈 覚醒！レインボーオーラ 🌈", progress:.78, move:3000, effect:"rainbow", sound:"win" },
+      { at:7200, text:"👀 運命のコマ送り...！！ 👀", progress:.985, move:3300, sound:"tick" }
+    ]},
+    { id:"lightning", name:"電撃ロックオン", duration:6500, phases:[
+      { at:0, text:"⚡ 電撃ロックオン！ ⚡", progress:.42, move:1200, effect:"shake", flash:true },
+      { at:1500, text:"⚡ CHARGE 50% ⚡", progress:.68, move:1300, sound:"tick" },
+      { at:3100, text:"⚡ CHARGE MAX!! ⚡", progress:.94, move:2300, effect:"rainbow", cutin:"⚡ MAX VOLTAGE!! ⚡" },
+      { at:5600, text:"💥 一撃停止！！ 💥", progress:.995, move:650, sound:"reach" }
+    ]},
+    { id:"countdown", name:"運命のカウントダウン", duration:8500, phases:[
+      { at:0, text:"⏳ 運命のカウントダウン 3", progress:.38, move:1800, sound:"tick" },
+      { at:2200, text:"⏳ 運命のカウントダウン 2", progress:.62, move:1600, sound:"tick" },
+      { at:4200, text:"⏳ 運命のカウントダウン 1", progress:.84, move:1700, effect:"shake", sound:"tick" },
+      { at:6400, text:"✨ ZERO!! 運命確定！？ ✨", progress:.99, move:1600, cutin:"3・2・1…ZERO!!" }
+    ]},
+    { id:"reverse", name:"逆回転リーチ", duration:9000, phases:[
+      { at:0, text:"🌀 高速スピン！ 🌀", progress:.48, move:2000, sound:"reach" },
+      { at:2300, text:"↩ まさかの逆回転！？ ↩", progress:.28, move:900, effect:"shake", cutin:"REVERSE!!" },
+      { at:3500, text:"🚀 再加速！限界突破！ 🚀", progress:.82, move:2600, effect:"rainbow" },
+      { at:6500, text:"🎯 ピタ止まりチャレンジ！ 🎯", progress:.992, move:2200, sound:"tick" }
+    ]},
+    { id:"revival", name:"暗転復活", duration:9500, phases:[
+      { at:0, text:"😨 あと少し...届かない！？", progress:.58, move:2400, sound:"tick" },
+      { at:2800, text:"・・・暗転・・・", progress:.59, move:100, effect:"dim" },
+      { at:4100, text:"🌟 まだ終わっていない！復活！ 🌟", progress:.86, move:2100, flash:true, cutin:"復 活！！", sound:"win" },
+      { at:6800, text:"🔥 復活のラストスパート！ 🔥", progress:.995, move:2400, effect:"rainbow" }
+    ]},
+    { id:"heartbeat", name:"鼓動シンクロ", duration:10000, phases:[
+      { at:0, text:"💓 ドクン・・・期待度上昇中", progress:.34, move:2200, sound:"tick" },
+      { at:2600, text:"💓 ドクン！ドクン！", progress:.57, move:1900, effect:"shake", sound:"tick" },
+      { at:4900, text:"💖 鼓動シンクロ率 99%！", progress:.82, move:2100, cutin:"HEART BEAT!!" },
+      { at:7500, text:"💗 最後の一拍...！", progress:.993, move:2200, sound:"reach" }
+    ]},
+    { id:"rainbow", name:"レインボー覚醒", duration:8800, phases:[
+      { at:0, text:"✨ オーラ発生...！ ✨", progress:.32, move:1800, sound:"reach" },
+      { at:2100, text:"💜 紫オーラから昇格！ 💜", progress:.61, move:1800, effect:"shake" },
+      { at:4300, text:"🌈 レインボー覚醒！！ 🌈", progress:.87, move:1900, effect:"rainbow", flash:true, cutin:"RAINBOW!!" },
+      { at:6700, text:"🌈 虹の先にある結果は...！？", progress:.994, move:1800, sound:"win" }
+    ]},
+    { id:"freeze", name:"フリーズ予告", duration:8000, phases:[
+      { at:0, text:"❄️ フリーズ発生まで...3秒", progress:.52, move:1900, sound:"tick" },
+      { at:2200, text:"❄️ 完全停止...！？ ❄️", progress:.525, move:80, effect:"dim" },
+      { at:3700, text:"🔥 フリーズ解除！超加速！ 🔥", progress:.88, move:1700, effect:"shake", cutin:"FREEZE BREAK!!" },
+      { at:5900, text:"💥 衝撃に備えろ！！ 💥", progress:.995, move:1800, flash:true }
+    ]},
+    { id:"turbo", name:"緩急ターボ", duration:7200, phases:[
+      { at:0, text:"🐢 超スロー...まだ見える！", progress:.25, move:2200, sound:"tick" },
+      { at:2500, text:"🚀 突然のターボ加速！！", progress:.82, move:950, effect:"shake", cutin:"TURBO!!" },
+      { at:3800, text:"🚀 限界速度を突破！", progress:.94, move:1800, effect:"rainbow" },
+      { at:5900, text:"🎯 急ブレーキ！！", progress:.996, move:950, sound:"reach" }
+    ]},
+    { id:"all-reel-revival", name:"全回転・奇跡の復活", allReelRevival:true }
+  ];
 
   function clearDramaTimers(){
     dramaTimers.forEach(function(t){ clearTimeout(t); clearInterval(t); });
     dramaTimers = [];
+  }
+
+  function stopContinuousSpinAnimation(){
+    reelSpinning = [false, false, false];
+    if(spinAnimationFrame !== null){
+      cancelAnimationFrame(spinAnimationFrame);
+      spinAnimationFrame = null;
+    }
+  }
+
+  function runContinuousSpinFrame(now){
+    var elapsed = now - spinStartedAt;
+    var anySpinning = false;
+    reelStrips.forEach(function(strip, idx){
+      if(!reelSpinning[idx]) return;
+      anySpinning = true;
+      var cellH = currentCellHeight();
+      var usableCells = Math.max(1, reelSequences[idx].length - 4);
+      var maxOffset = usableCells * cellH;
+      var offset = (elapsed * reelSpinSpeeds[idx] / 1000) % maxOffset;
+      strip.style.transition = "none";
+      strip.style.transform = "translateY(-" + offset + "px)";
+    });
+    if(anySpinning){
+      spinAnimationFrame = requestAnimationFrame(runContinuousSpinFrame);
+    } else {
+      spinAnimationFrame = null;
+    }
+  }
+
+  function startContinuousSpin(){
+    slotState = 1;
+    commitInventoryDraw();
+    reelSpinning = [true, true, true];
+    spinStartedAt = performance.now();
+    machineEl.classList.add("spinning");
+    spinBtn.querySelector(".btn-label").textContent = "⏹ スロットを止める！";
+    spinBtn.classList.add("pink");
+    if(tickTimer) clearInterval(tickTimer);
+    tickTimer = setInterval(function(){ sfxTick(); }, 140);
+    if(spinAnimationFrame !== null) cancelAnimationFrame(spinAnimationFrame);
+    spinAnimationFrame = requestAnimationFrame(runContinuousSpinFrame);
   }
 
   function goToRoulette(){
@@ -1226,13 +1317,14 @@
     currentDrawCommitted = false;
     currentDrawMode = config.probabilityMode || "weight";
     clearDramaTimers();
+    stopContinuousSpinAnimation();
     if(tickTimer) clearInterval(tickTimer);
     spinResultEl.textContent = "";
     spinResultEl.className = "spin-result";
     resultCompanionEl.className = "result-companion";
     resultCompanionEl.src = "";
     spinBtn.disabled = false;
-    spinBtn.querySelector(".btn-label").textContent = "🎰 スロットを止める！";
+    spinBtn.querySelector(".btn-label").textContent = "🎰 スロットスタート！";
     spinBtn.classList.remove("pink");
     machineEl.classList.remove("spinning","shake","bigshake","winglow","rainbow-glow");
     reelWindows.forEach(function(w){ w.classList.remove("landed","reach"); });
@@ -1266,22 +1358,19 @@
       }
     }
 
-    // Build strip sequences
+    // Long strips keep moving visibly for as long as the player waits to stop them.
     reelSequences = [
-      buildStripSequence(currentPool, currentTargets[0], 12),
-      buildStripSequence(currentPool, currentTargets[1], 12),
-      buildStripSequence(currentPool, currentTargets[2], 50)
+      buildStripSequence(currentPool, currentTargets[0], 32),
+      buildStripSequence(currentPool, currentTargets[1], 36),
+      buildStripSequence(currentPool, currentTargets[2], 40)
     ];
 
-    // Start all reels spinning immediately and continuously
+    // Show the prepared reels at rest. The first button press starts rotation.
     reelStrips.forEach(function(strip, idx){
       clearChildren(strip);
       reelSequences[idx].forEach(function(img){ strip.appendChild(makeCell(img)); });
       strip.style.transition = "none";
       strip.style.transform = "translateY(0px)";
-      void strip.offsetHeight;
-      strip.style.transition = "transform 0.6s linear";
-      strip.style.transform = "translateY(-" + (currentCellHeight() * 8) + "px)";
     });
 
     if(noPlayersLeft){
@@ -1296,8 +1385,6 @@
       return;
     }
 
-    machineEl.classList.add("spinning");
-    tickTimer = setInterval(function(){ sfxTick(); }, 90);
   }
 
   function pickPrizeIndex(prizes){
@@ -1325,18 +1412,52 @@
     return seq;
   }
 
+  function chooseDramaPattern(){
+    var candidates = DRAMA_PATTERNS.filter(function(pattern){
+      return !pattern.allReelRevival || currentIsWin;
+    });
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function setSequenceTarget(idx, imageFile){
+    var seq = reelSequences[idx];
+    var targetIdx = seq.length - 2;
+    seq[targetIdx] = imageFile;
+    var targetCell = reelStrips[idx].children[targetIdx];
+    if(targetCell && targetCell.firstChild){ targetCell.firstChild.src = REEL_IMG_DIR + imageFile; }
+  }
+
+  function prepareFakeMissTargets(){
+    var shuffled = currentPool.slice();
+    for(var i=shuffled.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = tmp;
+    }
+    var fakeTargets = shuffled.filter(function(image){ return image !== currentChosen.image; }).slice(0,3);
+    while(fakeTargets.length < 3){ fakeTargets.push(currentPool[fakeTargets.length % currentPool.length]); }
+    if(fakeTargets[0] === fakeTargets[1]) fakeTargets[1] = currentPool[(currentPool.indexOf(fakeTargets[0])+1) % currentPool.length];
+    fakeTargets.forEach(function(image, idx){ setSequenceTarget(idx, image); });
+  }
+
   function handleSlotButtonClick(){
     if(slotState === 5){
-      // Reset and start spinning again
+      // Prepare and immediately start the next round.
       buildReels();
+      if(!spinBtn.disabled) startContinuousSpin();
       return;
     }
 
-    if(slotState !== 0) return; // Prevent multiple clicks during sequence
-    slotState = 1;
-    commitInventoryDraw();
+    if(slotState === 0){
+      startContinuousSpin();
+      return;
+    }
 
-    // Single button click triggers automatic step-by-step stopping sequence!
+    if(slotState !== 1) return; // Prevent multiple clicks during stop sequence
+    slotState = 2;
+    currentDramaPattern = chooseDramaPattern();
+    if(currentDramaPattern.allReelRevival) prepareFakeMissTargets();
+
+    // The second click triggers the automatic step-by-step stopping sequence.
     spinBtn.disabled = true;
     spinBtn.querySelector(".btn-label").textContent = "✨ 運命のストップ演出中... ✨";
     sfxTick();
@@ -1350,7 +1471,8 @@
         stopReel(1, 0.4);
 
         // Reach Check
-        var isReach = currentIsWin || (currentTargets[0] === currentTargets[1]);
+        var isReach = !currentDramaPattern.allReelRevival &&
+          (currentIsWin || (currentTargets[0] === currentTargets[1]));
         if(isReach){
           setTimeout(function(){
             sfxReach();
@@ -1359,9 +1481,9 @@
           }, 450);
         }
 
-        // STEP 3: Start 20-Second Dramatic Suspense for Reel 2 smoothly after 0.5s
+        // STEP 3: Start one of ten dramatic finish patterns.
         dramaTimers.push(setTimeout(function(){
-          start20SecondDramaticSpin();
+          playDramaPattern(currentDramaPattern);
         }, 500));
 
       }, 2000));
@@ -1371,6 +1493,7 @@
 
   function stopReel(idx, durationSec){
     sfxReelStop(idx);
+    reelSpinning[idx] = false;
     var strip = reelStrips[idx];
     var cellH = currentCellHeight();
     var seq = reelSequences[idx];
@@ -1387,7 +1510,165 @@
     setTimeout(function(){ win.classList.remove("landed"); }, 420);
   }
 
-  function start20SecondDramaticSpin(){
+  function scheduleDrama(delay, fn){
+    var timer = setTimeout(fn, delay);
+    dramaTimers.push(timer);
+    return timer;
+  }
+
+  function showDramaCutin(text){
+    cutinTextEl.textContent = text;
+    cutinEl.classList.remove("go");
+    void cutinEl.offsetWidth;
+    cutinEl.classList.add("go");
+    scheduleDrama(1300, function(){ cutinEl.classList.remove("go"); });
+  }
+
+  function flashScreen(){
+    screenFlashEl.classList.remove("go");
+    void screenFlashEl.offsetWidth;
+    screenFlashEl.classList.add("go");
+  }
+
+  function playDramaSound(sound){
+    if(sound === "win") sfxWin();
+    else if(sound === "reach") sfxReach();
+    else if(sound === "tick") sfxTick();
+  }
+
+  function applyDramaPhase(strip, finalOffset, phase){
+    suspenseBannerEl.textContent = phase.text;
+    suspenseBannerEl.classList.add("show");
+    machineEl.style.filter = phase.effect === "dim" ? "brightness(.28)" : "";
+    machineEl.classList.remove("shake","rainbow-glow");
+    if(phase.effect === "shake") machineEl.classList.add("shake");
+    if(phase.effect === "rainbow") machineEl.classList.add("rainbow-glow");
+    if(phase.progress != null){
+      strip.style.transition = "transform " + (phase.move || 1000) + "ms cubic-bezier(.12,.72,.2,1)";
+      strip.style.transform = "translateY(-" + (finalOffset * phase.progress) + "px)";
+    }
+    if(phase.flash) flashScreen();
+    if(phase.cutin) showDramaCutin(phase.cutin);
+    playDramaSound(phase.sound);
+  }
+
+  function playStandardDrama(pattern){
+    reelSpinning[2] = false;
+    var strip = reelStrips[2];
+    var cellH = currentCellHeight();
+    var targetCellIndex = reelSequences[2].length - 2;
+    var finalOffset = (targetCellIndex - 1) * cellH;
+
+    pattern.phases.forEach(function(phase){
+      if(phase.at === 0) applyDramaPhase(strip, finalOffset, phase);
+      else scheduleDrama(phase.at, function(){ applyDramaPhase(strip, finalOffset, phase); });
+    });
+
+    scheduleDrama(pattern.duration, function(){
+      stopReel(2, 0.28);
+      scheduleDrama(340, finishSpinResult);
+    });
+  }
+
+  function rebuildOutcomeReels(){
+    reelSequences = [
+      buildStripSequence(currentPool, currentTargets[0], 28),
+      buildStripSequence(currentPool, currentTargets[1], 30),
+      buildStripSequence(currentPool, currentTargets[2], 32)
+    ];
+    reelStrips.forEach(function(strip, idx){
+      clearChildren(strip);
+      reelSequences[idx].forEach(function(image){ strip.appendChild(makeCell(image)); });
+      strip.style.transition = "none";
+      strip.style.transform = "translateY(0px)";
+    });
+  }
+
+  function restartAllReelsForRevival(){
+    rebuildOutcomeReels();
+    reelSpinning = [true, true, true];
+    spinStartedAt = performance.now();
+    machineEl.classList.add("spinning","rainbow-glow");
+    if(spinAnimationFrame !== null) cancelAnimationFrame(spinAnimationFrame);
+    spinAnimationFrame = requestAnimationFrame(runContinuousSpinFrame);
+  }
+
+  function playAllReelRevival(){
+    reelSpinning[2] = false;
+    suspenseBannerEl.textContent = "😢 バラバラ停止...はずれ！？";
+    suspenseBannerEl.classList.add("show");
+    stopReel(2, 0.35);
+    sfxLose();
+
+    scheduleDrama(1100, function(){
+      machineEl.style.filter = "brightness(.2)";
+      suspenseBannerEl.textContent = "・・・まだ終わっていない・・・";
+    });
+    scheduleDrama(1900, function(){
+      machineEl.style.filter = "";
+      flashScreen();
+      showDramaCutin("🌟 奇跡の全回転・復活！！ 🌟");
+      suspenseBannerEl.textContent = "🌈 3リール全回転！一気に揃え！ 🌈";
+      sfxWin();
+      restartAllReelsForRevival();
+    });
+    scheduleDrama(5000, function(){
+      suspenseBannerEl.textContent = "🎯 全リール同時ロックオン！！ 🎯";
+      reelSpinning = [false, false, false];
+      stopReel(0, 0.65);
+      stopReel(1, 0.65);
+      stopReel(2, 0.65);
+    });
+    scheduleDrama(5750, finishSpinResult);
+  }
+
+  function playDramaPattern(pattern){
+    suspenseBannerEl.textContent = "演出「" + pattern.name + "」スタート！";
+    suspenseBannerEl.classList.add("show");
+    if(pattern.allReelRevival) playAllReelRevival();
+    else playStandardDrama(pattern);
+  }
+
+  function finishSpinResult(){
+    if(tickTimer) clearInterval(tickTimer);
+    stopContinuousSpinAnimation();
+    machineEl.style.filter = "";
+    machineEl.classList.remove("spinning","shake","rainbow-glow");
+    reelWindows.forEach(function(win){ win.classList.remove("reach"); });
+    reachBadgeEl.classList.remove("show");
+    suspenseBannerEl.classList.remove("show");
+
+    if(!currentIsWin){
+      sfxLose();
+      spinResultEl.textContent = "結果：" + currentChosen.name + "・・・また今度ね！";
+      spinResultEl.className = "spin-result lose";
+      resultCompanionEl.src = FULL_IMG_DIR + LOSE_COMPANION_IMAGE;
+      resultCompanionEl.className = "result-companion show";
+      machineEl.classList.add("shake");
+      setTimeout(function(){ machineEl.classList.remove("shake"); }, 450);
+    } else {
+      sfxWin();
+      spinResultEl.textContent = "🎉 当選！「" + currentChosen.name + "」 🎉";
+      spinResultEl.className = "spin-result win";
+      resultCompanionEl.src = FULL_IMG_DIR + currentChosen.image;
+      resultCompanionEl.className = "result-companion show";
+      launchConfetti();
+      flashScreen();
+      setTimeout(flashScreen, 550);
+      machineEl.classList.add("bigshake","winglow");
+      setTimeout(function(){ machineEl.classList.remove("bigshake"); }, 650);
+      setTimeout(function(){ machineEl.classList.remove("winglow"); }, 1500);
+      showDramaCutin("🎉 " + currentChosen.name + " WIN!! 🎉");
+    }
+
+    slotState = 5;
+    spinBtn.querySelector(".btn-label").textContent = "🎰 もう一度スロットスタート";
+    spinBtn.classList.add("pink");
+    spinBtn.disabled = false;
+  }
+
+  function legacy20SecondDramaticSpin(){
+    reelSpinning[2] = false;
     var strip = reelStrips[2];
     var cellH = currentCellHeight();
     var seq = reelSequences[2];
@@ -1485,6 +1766,7 @@
     // --- FINALE (20.0s): Big Impact Landing & Result ---
     dramaTimers.push(setTimeout(function(){
       if(tickTimer) clearInterval(tickTimer);
+      stopContinuousSpinAnimation();
       stopReel(2, 0.2);
       machineEl.classList.remove("spinning","shake","rainbow-glow");
       reelWindows[2].classList.remove("reach");
@@ -1520,7 +1802,7 @@
       }
 
       slotState = 5;
-      spinBtn.querySelector(".btn-label").textContent = "もう一度挑戦（リセット）";
+      spinBtn.querySelector(".btn-label").textContent = "🎰 もう一度スロットスタート";
       spinBtn.classList.add("pink");
       spinBtn.disabled = false;
     }, 20000));
